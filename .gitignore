@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Large image dataset — too big for GitHub (use Git LFS or external storage)
+images/
+
+# Environment & secrets — NEVER commit .env to git
+.env
+.env.local
+.env.production
+.env.*
+!.env.example
+
+# Local duplicate project copy; publish only this root project
+medchain proposed arshad/
+
+# Sepolia config may contain provider-specific RPC credentials
+contract-config-sepolia.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/settings.json
+
+# Temp files
+*.tmp
+*.log

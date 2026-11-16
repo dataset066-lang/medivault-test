@@ -1,0 +1,697 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blockchain Network — MediVault</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    /* ── Network Switcher ── */
+    .network-switcher {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow);
+      flex-wrap: wrap;
+    }
+    .network-switcher-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .net-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      background: var(--bg);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      transition: all 0.18s;
+      white-space: nowrap;
+    }
+    .net-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: rgba(37,99,235,0.05);
+    }
+    .net-btn.active {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: rgba(37,99,235,0.08);
+      font-weight: 600;
+    }
+    .net-btn .net-dot {
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .net-btn.active .net-dot { animation: pulse-dot 1.6s infinite; }
+    @keyframes pulse-dot {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50%      { opacity: 0.6; transform: scale(1.3); }
+    }
+    .net-sep {
+      width: 1px; height: 24px;
+      background: var(--border);
+      margin: 0 4px;
+    }
+    .current-network-pill {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-muted);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px 12px;
+    }
+    .current-network-pill .pill-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #94A3B8;
+    }
+    .current-network-pill .pill-dot.connected { background: var(--success); }
+
+    /* ── Sepolia info banner ── */
+    .sepolia-banner {
+      display: none;
+      padding: 10px 14px;
+      background: rgba(124,58,237,0.06);
+      border: 1px solid rgba(124,58,237,0.25);
+      border-radius: 8px;
+      font-size: 12.5px;
+      color: #5B21B6;
+      margin-bottom: 16px;
+      line-height: 1.6;
+    }
+    .ganache-banner {
+      display: none;
+      padding: 10px 14px;
+      background: rgba(22,163,74,0.06);
+      border: 1px solid rgba(22,163,74,0.25);
+      border-radius: 8px;
+      font-size: 12.5px;
+      color: #15803D;
+      margin-bottom: 16px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <div id="sidebar-container"></div>
+  <div class="main-content">
+
+    <div class="topbar">
+      <div class="breadcrumb">
+        <span>MediVault</span><span class="bc-sep">›</span><span class="bc-active">Blockchain Network</span>
+      </div>
+      <div class="topbar-right">
+        <div id="wallet-status-bar"></div>
+        <div class="wallet-toggle-wrap">
+          <span>Wallet</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="wallet-toggle" onchange="onWalletToggle(this)">
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <div class="page-header">
+        <h1 class="page-title">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="6" height="6" rx="1"/><rect x="16" y="7" width="6" height="6" rx="1"/><rect x="9" y="14" width="6" height="6" rx="1"/><path d="M5 13v2a1 1 0 0 0 1 1h3M19 13v2a1 1 0 0 1-1 1h-3M12 7V5"/></svg>
+          Blockchain Network
+        </h1>
+        <p class="page-subtitle">Store the IPFS CID on Ethereum blockchain via MetaMask — supports Ganache (local) and Sepolia (testnet).</p>
+      </div>
+
+      <!-- ══ NETWORK SWITCHER ══ -->
+      <div class="network-switcher">
+        <div class="network-switcher-label">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          Select Network:
+        </div>
+
+        <!-- Ganache -->
+        <button class="net-btn active" id="btn-ganache" onclick="selectNetwork('ganache')">
+          <span class="net-dot" style="background:#16A34A;"></span>
+          Ganache Local
+          <span style="font-size:10px;opacity:0.7;">Chain 1337</span>
+        </button>
+
+        <div class="net-sep"></div>
+
+        <!-- Sepolia -->
+        <button class="net-btn" id="btn-sepolia" onclick="selectNetwork('sepolia')">
+          <span class="net-dot" style="background:#7C3AED;"></span>
+          Sepolia Testnet
+          <span style="font-size:10px;opacity:0.7;">Chain 11155111</span>
+        </button>
+
+        <!-- Current pill -->
+        <div class="current-network-pill" id="active-network-pill">
+          <span class="pill-dot" id="pill-dot"></span>
+          <span id="pill-text">Not Connected</span>
+        </div>
+      </div>
+
+      <!-- Ganache info -->
+      <div class="ganache-banner" id="ganache-banner">
+        <strong>Ganache Local</strong> — Requires Ganache running on <code>http://127.0.0.1:7545</code> and contract deployed via <code>node deploy.js</code>.
+        MetaMask must be switched to <strong>Ganache Local (Chain 1337)</strong>.
+      </div>
+
+      <!-- Sepolia info -->
+      <div class="sepolia-banner" id="sepolia-banner">
+        <strong>Sepolia Testnet</strong> — Uses Ethereum Sepolia (Chain 11155111). Contract must be deployed on Sepolia separately.
+        Get free SepoliaETH from <a href="https://sepoliafaucet.com" target="_blank" style="color:#7C3AED;font-weight:600;">sepoliafaucet.com</a>.
+        MetaMask must be switched to <strong>Sepolia</strong>.
+      </div>
+
+      <!-- Setup hint -->
+      <div id="mm-hint" class="card" style="background:#FFF7ED;border-color:#FDE68A;margin-bottom:20px;padding:14px 18px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#92400E;margin-bottom:6px;">One-Time MetaMask Setup</div>
+            <ol style="font-size:12px;color:#78350F;padding-left:18px;line-height:2;">
+              <li>Open MetaMask → Settings → <strong>Security &amp; Privacy</strong> → Turn <strong>Blockaid OFF</strong></li>
+              <li>Select the correct network using the switcher above</li>
+              <li>Use the Wallet toggle to connect, then confirm the transaction</li>
+            </ol>
+          </div>
+          <button onclick="document.getElementById('mm-hint').style.display='none'"
+            style="background:none;border:none;cursor:pointer;color:#92400E;font-size:18px;padding:0 4px;">✕</button>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Left column -->
+        <div style="display:flex;flex-direction:column;gap:20px;">
+
+          <!-- Wallet Card -->
+          <div class="card">
+            <div class="card-title" style="margin-bottom:16px;">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><circle cx="17" cy="12" r="1"/></svg>
+              MetaMask Wallet
+            </div>
+
+            <div id="wallet-not-connected">
+              <p class="text-muted" style="margin-bottom:14px;font-size:13px;">
+                Connect your MetaMask wallet to store data on the selected network.
+              </p>
+              <button class="btn btn-primary btn-full" onclick="connectAndUpdate()">
+                Connect MetaMask
+              </button>
+            </div>
+
+            <div id="wallet-connected-info" style="display:none;">
+              <div class="info-grid" style="grid-template-columns:1fr 1fr;">
+                <div class="info-item">
+                  <div class="i-label">Address</div>
+                  <div class="i-value primary" id="bc-wallet-addr" style="font-size:11px;">—</div>
+                </div>
+                <div class="info-item">
+                  <div class="i-label">Balance</div>
+                  <div class="i-value success" id="bc-wallet-bal">—</div>
+                </div>
+                <div class="info-item">
+                  <div class="i-label">Network</div>
+                  <div class="i-value" id="bc-network-name">—</div>
+                </div>
+                <div class="info-item">
+                  <div class="i-label">Chain ID</div>
+                  <div class="i-value primary" id="bc-chain-id">—</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
+                <button class="btn btn-secondary btn-sm" onclick="switchToNetwork(currentNetwork)">
+                  Switch to Selected Network
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="disconnectAndUpdate()">
+                  Disconnect
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contract Info -->
+          <div class="card">
+            <div class="card-title" style="margin-bottom:14px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Smart Contract
+            </div>
+            <div class="info-grid" style="grid-template-columns:1fr;">
+              <div class="info-item">
+                <div class="i-label">Contract Address</div>
+                <div class="i-value primary" id="bc-contract-addr" style="font-size:11px;">Loading…</div>
+              </div>
+              <div class="info-item">
+                <div class="i-label">RPC / Network</div>
+                <div class="i-value" id="bc-rpc">—</div>
+              </div>
+              <div class="info-item">
+                <div class="i-label">Status</div>
+                <div class="i-value" id="bc-contract-status">—</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Data to store -->
+          <div class="card">
+            <div class="card-title" style="margin-bottom:14px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/></svg>
+              Data to Record
+            </div>
+            <div class="info-grid" style="grid-template-columns:1fr;">
+              <div class="info-item">
+                <div class="i-label">IPFS CID</div>
+                <div class="i-value" id="bc-cid" style="font-size:11px;font-family:monospace;color:var(--teal);">—</div>
+              </div>
+              <div class="info-item">
+                <div class="i-label">SHA-256 Hash</div>
+                <div class="i-value" id="bc-hash" style="font-size:10px;font-family:monospace;">—</div>
+              </div>
+              <div class="info-item">
+                <div class="i-label">Image Type</div>
+                <div class="i-value success" id="bc-imgtype">—</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Store Button -->
+          <div class="card">
+            <button class="btn btn-full" id="store-chain-btn" onclick="storeOnBlockchain()"
+              style="background:linear-gradient(135deg,#2563EB,#7C3AED);color:#fff;font-weight:700;padding:14px;font-size:15px;border:none;border-radius:8px;cursor:pointer;">
+              Sign &amp; Store on Blockchain
+            </button>
+            <div id="bc-status" style="display:none;margin-top:12px;padding:10px 14px;border-radius:6px;font-size:13px;border:1px solid var(--border);"></div>
+          </div>
+        </div>
+
+        <!-- Right column -->
+        <div style="display:flex;flex-direction:column;gap:20px;">
+
+          <!-- Result -->
+          <div id="bc-result" style="display:none;" class="card">
+            <div class="card-title" style="margin-bottom:14px;color:var(--success);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              Blockchain Record Saved
+            </div>
+            <div class="info-grid" style="grid-template-columns:1fr 1fr;">
+              <div class="info-item">
+                <div class="i-label">Transaction Hash</div>
+                <div class="i-value primary" id="bc-tx-hash" style="font-size:10px;font-family:monospace;">—</div>
+              </div>
+              <div class="info-item">
+                <div class="i-label">Record ID</div>
+                <div class="i-value success" id="bc-record-id">—</div>
+              </div>
+              <div class="info-item">
+                <div class="i-label">Block Number</div>
+                <div class="i-value" id="bc-block">—</div>
+              </div>
+              <div class="info-item">
+                <div class="i-label">Gas Used</div>
+                <div class="i-value" id="bc-gas">—</div>
+              </div>
+              <div class="info-item">
+                <div class="i-label">Contract</div>
+                <div class="i-value primary" id="bc-contract" style="font-size:10px;">—</div>
+              </div>
+              <div class="info-item">
+                <div class="i-label">Network Used</div>
+                <div class="i-value success" id="bc-network-used">—</div>
+              </div>
+            </div>
+            <div class="divider" style="margin:14px 0;"></div>
+            <div style="display:flex;gap:10px;">
+              <button class="btn btn-secondary" onclick="downloadReport()">Download Report</button>
+              <a href="audit-logs.html" class="btn btn-primary">View Audit Logs</a>
+            </div>
+          </div>
+
+          <!-- Sepolia explorer link (shown after Sepolia tx) -->
+          <div id="sepolia-explorer" style="display:none;" class="card" style="background:rgba(124,58,237,0.04);">
+            <div class="card-title" style="margin-bottom:10px;color:#7C3AED;">
+              View on Sepolia Etherscan
+            </div>
+            <a id="sepolia-tx-link" href="#" target="_blank" class="btn btn-full"
+              style="display:block;text-align:center;background:#7C3AED;color:#fff;padding:10px;border-radius:8px;font-weight:600;">
+              Open Transaction on Etherscan
+            </a>
+          </div>
+
+          <!-- Previous TX -->
+          <div class="card" id="prev-tx-card" style="display:none;">
+            <div class="card-title" style="margin-bottom:14px;color:var(--text-muted);">Previous Transaction (Session)</div>
+            <div class="info-grid" style="grid-template-columns:1fr;">
+              <div class="info-item"><div class="i-label">TX Hash</div><div class="i-value primary" id="prev-tx-hash" style="font-size:10px;font-family:monospace;">—</div></div>
+              <div class="info-item"><div class="i-label">Record ID</div><div class="i-value success" id="prev-record-id">—</div></div>
+              <div class="info-item"><div class="i-label">Block</div><div class="i-value" id="prev-block">—</div></div>
+            </div>
+          </div>
+
+          <!-- TX History -->
+          <div class="card">
+            <div class="card-title" style="margin-bottom:14px;">Transaction History</div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Time</th><th>Network</th><th>Details</th><th>Status</th></tr>
+                </thead>
+                <tbody id="tx-history-body">
+                  <tr class="empty-row"><td colspan="4">No blockchain transactions yet</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<script src="shared.js"></script>
+<script>
+initSidebar('blockchain');
+MediVault.load();
+
+// ═══════════════════════════════════════════════════
+//  NETWORK CONFIG
+// ═══════════════════════════════════════════════════
+const NETWORKS = {
+  ganache: {
+    name:        'Ganache Local',
+    chainId:     1337,
+    chainIdHex:  '0x539',
+    rpcUrl:      'http://127.0.0.1:7545',
+    currency:    'ETH',
+    explorer:    null,
+    color:       '#16A34A',
+    dotColor:    '#16A34A',
+  },
+  sepolia: {
+    name:        'Sepolia Testnet',
+    chainId:     11155111,
+    chainIdHex:  '0xaa36a7',
+    rpcUrl:      'https://ethereum-sepolia-rpc.publicnode.com',
+    currency:    'SepoliaETH',
+    explorer:    'https://sepolia.etherscan.io/tx/',
+    color:       '#7C3AED',
+    dotColor:    '#7C3AED',
+  }
+};
+
+let currentNetwork = 'ganache';  // default
+
+// ── Select Network ──────────────────────────────────
+function selectNetwork(net) {
+  currentNetwork = net;
+  const cfg = NETWORKS[net];
+
+  // Update buttons
+  document.getElementById('btn-ganache').classList.toggle('active', net === 'ganache');
+  document.getElementById('btn-sepolia').classList.toggle('active', net === 'sepolia');
+
+  // Update banners
+  document.getElementById('ganache-banner').style.display = net === 'ganache' ? 'block' : 'none';
+  document.getElementById('sepolia-banner').style.display = net === 'sepolia' ? 'block' : 'none';
+
+  // Update store button color
+  const storeBtn = document.getElementById('store-chain-btn');
+  storeBtn.style.background = net === 'ganache'
+    ? 'linear-gradient(135deg,#16A34A,#2563EB)'
+    : 'linear-gradient(135deg,#7C3AED,#2563EB)';
+
+  toast(`Network switched to ${cfg.name}`, 'info');
+
+  // If wallet is connected, offer to switch
+  const ch = window._mvChain;
+  if (ch && ch.walletAddress) {
+    switchToNetwork(net);
+  }
+}
+
+// ── Switch MetaMask to selected network ─────────────
+async function switchToNetwork(net) {
+  if (!window.ethereum) return;
+  const cfg = NETWORKS[net];
+  try {
+    await window.ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: cfg.chainIdHex }],
+    });
+    toast(`MetaMask switched to ${cfg.name}`, 'success');
+    await refreshWalletInfo();
+  } catch (err) {
+    if (err.code === 4902) {
+      // Network not in MetaMask — add it
+      try {
+        await window.ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [{
+            chainId:         cfg.chainIdHex,
+            chainName:       cfg.name,
+            nativeCurrency:  { name: cfg.currency, symbol: cfg.currency, decimals: 18 },
+            rpcUrls:         [cfg.rpcUrl],
+            blockExplorerUrls: cfg.explorer ? [cfg.explorer.replace('/tx/','')] : [],
+          }],
+        });
+        toast(`${cfg.name} added to MetaMask`, 'success');
+        await refreshWalletInfo();
+      } catch (addErr) {
+        toast('Could not add network: ' + addErr.message, 'error');
+      }
+    } else if (err.code === 4001) {
+      toast('Network switch cancelled by user', 'warning');
+    } else {
+      toast('Network switch failed: ' + err.message, 'error');
+    }
+  }
+}
+
+// ── Refresh wallet display after network switch ──────
+async function refreshWalletInfo() {
+  const ch = window._mvChain;
+  if (!ch || !ch.walletAddress) return;
+  try {
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const net      = await provider.getNetwork();
+    const bal      = await provider.getBalance(ch.walletAddress);
+    const cfg      = NETWORKS[currentNetwork];
+
+    document.getElementById('bc-network-name').textContent = net.name || cfg.name;
+    document.getElementById('bc-chain-id').textContent     = net.chainId.toString();
+    document.getElementById('bc-wallet-bal').textContent   = parseFloat(ethers.formatEther(bal)).toFixed(4) + ' ' + cfg.currency;
+
+    // Update pill
+    document.getElementById('pill-dot').className  = 'pill-dot connected';
+    document.getElementById('pill-text').textContent = cfg.name;
+    document.getElementById('pill-text').style.color = cfg.color;
+  } catch(e) {}
+}
+
+// ── Connect Wallet ───────────────────────────────────
+async function connectAndUpdate() {
+  const ok = await connectWallet();
+  if (!ok) return;
+
+  document.getElementById('wallet-not-connected').style.display  = 'none';
+  document.getElementById('wallet-connected-info').style.display = 'block';
+
+  const ch = window._mvChain;
+  document.getElementById('bc-wallet-addr').textContent = ch.walletAddress;
+
+  // Auto-switch to selected network
+  await switchToNetwork(currentNetwork);
+  await refreshWalletInfo();
+}
+
+function disconnectAndUpdate() {
+  disconnectWallet();
+  document.getElementById('wallet-not-connected').style.display  = 'block';
+  document.getElementById('wallet-connected-info').style.display = 'none';
+  document.getElementById('pill-dot').className  = 'pill-dot';
+  document.getElementById('pill-text').textContent = 'Not Connected';
+  document.getElementById('pill-text').style.color = '';
+}
+
+// ── On MetaMask account/chain change ────────────────
+if (window.ethereum) {
+  window.ethereum.on('chainChanged', () => refreshWalletInfo());
+  window.ethereum.on('accountsChanged', () => {
+    disconnectAndUpdate();
+    toast('MetaMask account changed — please reconnect', 'warning');
+  });
+}
+
+// ── Override storeOnBlockchain to use currentNetwork config ──
+const _baseStore = storeOnBlockchain;
+// Patch: inject network config before calling storeOnBlockchain
+// storeOnBlockchain in shared.js reads window._mvChain.contractConfig.chainId
+// We override contractConfig.chainId with selected network
+async function storeOnBlockchainPatched() {
+  const ch  = window._mvChain;
+  const cfg = NETWORKS[currentNetwork];
+
+  // For Sepolia: override RPC
+  if (currentNetwork === 'sepolia' && ch.contractConfig) {
+    // Use whatever contract is deployed — just update chain check
+    ch.contractConfig._targetChainId  = cfg.chainId;
+    ch.contractConfig._targetChainHex = cfg.chainIdHex;
+  }
+
+  await storeOnBlockchain();
+
+  // After success: show Sepolia explorer link
+  const tx = MediVault.blockchainTx;
+  if (tx && currentNetwork === 'sepolia' && cfg.explorer) {
+    document.getElementById('sepolia-explorer').style.display = 'block';
+    document.getElementById('sepolia-tx-link').href = cfg.explorer + tx.txHash;
+  }
+  document.getElementById('bc-network-used').textContent = cfg.name;
+  renderTxHistory();
+}
+
+// Replace store button action
+document.getElementById('store-chain-btn').onclick = storeOnBlockchainPatched;
+
+// ── Load correct contract config based on network ───
+async function loadContractForNetwork(net) {
+  const cfg = NETWORKS[net];
+  let contractCfg = null;
+
+  if (net === 'ganache') {
+    // Try local server first, then embedded
+    contractCfg = await loadContractConfig();
+  } else if (net === 'sepolia') {
+    // Try sepolia-specific config file first
+    try {
+      const r = await fetch('/contract-config-sepolia.json', { signal: AbortSignal.timeout(2000) });
+      if (r.ok) contractCfg = await r.json();
+    } catch(_) {}
+    // Try medivault subfolder
+    if (!contractCfg) {
+      try {
+        const r = await fetch('/medivault/contract-config-sepolia.json', { signal: AbortSignal.timeout(2000) });
+        if (r.ok) contractCfg = await r.json();
+      } catch(_) {}
+    }
+    // Check if _SEPOLIA_CONFIG is defined in shared.js
+    if (!contractCfg && typeof _SEPOLIA_CONFIG !== 'undefined') {
+      contractCfg = _SEPOLIA_CONFIG;
+    }
+  }
+
+  const addrEl  = document.getElementById('bc-contract-addr');
+  const rpcEl   = document.getElementById('bc-rpc');
+  const statEl  = document.getElementById('bc-contract-status');
+
+  if (contractCfg && contractCfg.contractAddress) {
+    // Store in chain state with network-specific override
+    window._mvChain.contractConfig = contractCfg;
+    window._mvChain.contractConfig._targetChainId  = cfg.chainId;
+    window._mvChain.contractConfig._targetChainHex = cfg.chainIdHex;
+
+    if (addrEl)  addrEl.textContent  = contractCfg.contractAddress;
+    if (rpcEl)   rpcEl.textContent   = cfg.name + ' — Chain ' + cfg.chainId;
+    if (statEl)  statEl.innerHTML    = '<span class="badge badge-success">Deployed</span>';
+
+    if (net === 'sepolia') {
+      toast('Sepolia contract loaded: ' + contractCfg.contractAddress.slice(0,10) + '...', 'success');
+    }
+  } else {
+    if (addrEl)  addrEl.textContent  = 'Not deployed on ' + cfg.name;
+    if (rpcEl)   rpcEl.textContent   = cfg.name + ' — Chain ' + cfg.chainId;
+    if (statEl)  statEl.innerHTML    = net === 'sepolia'
+      ? '<span class="badge badge-warning">Run: node deploy-sepolia.js</span>'
+      : '<span class="badge badge-danger">Run: node deploy.js</span>';
+  }
+}
+
+// ── Render TX History ────────────────────────────────
+function renderTxHistory() {
+  const logs = getAuditLogs().filter(l => l.action === 'BLOCKCHAIN_STORE');
+  const tbody = document.getElementById('tx-history-body');
+  if (!logs.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="4">No blockchain transactions yet</td></tr>';
+    return;
+  }
+  tbody.innerHTML = logs.map(log => {
+    const netName = log.network || 'Ganache';
+    const netColor = netName.toLowerCase().includes('sepolia') ? '#7C3AED' : '#16A34A';
+    return `
+      <tr>
+        <td class="td-muted" style="font-size:11px;">${new Date(log.ts).toLocaleString()}</td>
+        <td><span style="font-size:11px;font-weight:600;color:${netColor};">${netName}</span></td>
+        <td style="font-size:11px;font-family:monospace;">${(log.details||'').slice(0,35)}</td>
+        <td>${log.status === 'success'
+          ? '<span class="badge badge-success">Success</span>'
+          : '<span class="badge badge-danger">Failed</span>'}</td>
+      </tr>`;
+  }).join('');
+}
+
+// ── Init page ────────────────────────────────────────
+document.getElementById('bc-cid').textContent     = MediVault.ipfsCID    || 'Not uploaded yet — go to IPFS Storage';
+document.getElementById('bc-hash').textContent    = MediVault.sha256Hash || '—';
+document.getElementById('bc-imgtype').textContent = MediVault.currentImageType || '—';
+
+if (MediVault.blockchainTx) {
+  const tx = MediVault.blockchainTx;
+  document.getElementById('prev-tx-card').style.display    = 'block';
+  document.getElementById('prev-tx-hash').textContent      = tx.txHash;
+  document.getElementById('prev-record-id').textContent    = '#' + tx.recordId;
+  document.getElementById('prev-block').textContent        = tx.blockNumber;
+}
+
+loadContractConfig().then(cfg => {
+  if (cfg) {
+    document.getElementById('bc-contract-addr').textContent = cfg.contractAddress;
+    document.getElementById('bc-rpc').textContent           = cfg.rpcUrl + ' (Chain ' + cfg.chainId + ')';
+    document.getElementById('bc-contract-status').innerHTML = '<span class="badge badge-success">Deployed</span>';
+  } else {
+    document.getElementById('bc-contract-addr').textContent = 'Not deployed';
+    document.getElementById('bc-contract-status').innerHTML = '<span class="badge badge-danger">Run: node deploy.js</span>';
+  }
+});
+
+// Show Ganache banner by default
+document.getElementById('ganache-banner').style.display = 'block';
+
+renderTxHistory();
+
+// Watch for bc-result visibility to re-render history
+new MutationObserver(() => {
+  renderTxHistory();
+  const ch = window._mvChain;
+  if (ch && ch.walletAddress) {
+    document.getElementById('wallet-not-connected').style.display  = 'none';
+    document.getElementById('wallet-connected-info').style.display = 'block';
+    document.getElementById('bc-wallet-addr').textContent = ch.walletAddress;
+  }
+}).observe(document.getElementById('bc-result'), { attributes: true });
+</script>
+</body>
+</html>

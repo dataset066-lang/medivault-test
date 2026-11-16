@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Acquisition — MediVault</title>
+  <link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<div class="app-layout">
+  <div id="sidebar-container"></div>
+  <div class="main-content">
+
+    <div class="topbar">
+      <div class="breadcrumb">
+        <span>MediVault</span><span class="bc-sep">›</span><span class="bc-active">Image Acquisition</span>
+      </div>
+      <div class="topbar-right">
+        <div id="wallet-status-bar"></div>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <div class="page-header">
+        <h1 class="page-title">🏥 Step 1 — Medical Image Acquisition</h1>
+        <p class="page-subtitle">Select the medical image modality and upload the source image file for processing.</p>
+      </div>
+
+      <!-- Pipeline indicator -->
+      <div class="pipeline-bar">
+        <div class="pipe-step active"><span class="p-icon">🏥</span><span class="p-label">1. Acquisition</span></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step"><span class="p-icon">⚙️</span><span class="p-label">2. Preprocessing</span></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step"><span class="p-icon">🔐</span><span class="p-label">3. Encryption</span></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step"><span class="p-icon">📦</span><span class="p-label">4. IPFS Storage</span></div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Left: Type + Upload -->
+        <div style="display:flex;flex-direction:column;gap:20px;">
+          <div class="card">
+            <div class="card-title" style="margin-bottom:16px;">🔬 Select Imaging Modality</div>
+            <div class="type-grid" id="type-grid">
+              <div class="type-btn selected" data-type="CT Scan"    onclick="selectType(this)"><span class="t-icon">🔬</span>CT Scan</div>
+              <div class="type-btn"           data-type="MRI"        onclick="selectType(this)"><span class="t-icon">🧲</span>MRI</div>
+              <div class="type-btn"           data-type="X-Ray"      onclick="selectType(this)"><span class="t-icon">☢️</span>X-Ray</div>
+              <div class="type-btn"           data-type="Ultrasound" onclick="selectType(this)"><span class="t-icon">📡</span>Ultrasound</div>
+              <div class="type-btn"           data-type="PET Scan"   onclick="selectType(this)"><span class="t-icon">🫀</span>PET Scan</div>
+              <div class="type-btn"           data-type="Other"      onclick="selectType(this)"><span class="t-icon">📁</span>Other</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title" style="margin-bottom:14px;">📤 Upload Medical Image</div>
+            <div class="upload-zone" id="drop-zone">
+              <input type="file" id="file-input" accept="image/*,.dcm" onchange="handleFile(event)">
+              <div class="upload-icon">📤</div>
+              <p><strong>Click to upload</strong> or drag &amp; drop</p>
+              <p class="hint">PNG · JPG · BMP · TIFF · DICOM</p>
+            </div>
+
+            <!-- File info -->
+            <div id="file-info" class="hidden" style="margin-top:14px;">
+              <div class="info-grid" style="grid-template-columns:1fr 1fr;">
+                <div class="info-item"><div class="i-label">File Name</div><div class="i-value" id="fi-name">—</div></div>
+                <div class="info-item"><div class="i-label">File Size</div><div class="i-value primary" id="fi-size">—</div></div>
+                <div class="info-item"><div class="i-label">Dimensions</div><div class="i-value" id="fi-dims">—</div></div>
+                <div class="info-item"><div class="i-label">Modality</div><div class="i-value success" id="fi-type">—</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Preview + Continue -->
+        <div style="display:flex;flex-direction:column;gap:20px;">
+          <div class="card">
+            <div class="card-title" style="margin-bottom:14px;">🖼️ Image Preview</div>
+            <div id="preview-wrap" style="display:none;">
+              <div class="img-preview-wrap">
+                <img id="preview-img" src="" alt="Medical Image Preview">
+                <span class="img-preview-badge">ORIGINAL</span>
+              </div>
+            </div>
+            <div id="no-preview" style="text-align:center;padding:48px 20px;color:var(--text-muted);">
+              <div style="font-size:48px;margin-bottom:10px;">🖼️</div>
+              <p>Upload an image to preview it here</p>
+            </div>
+          </div>
+
+          <div class="card" id="acquisition-info" style="display:none;">
+            <div class="card-title" style="margin-bottom:14px;">✅ Acquisition Complete</div>
+            <p class="text-muted mb-16">Image loaded successfully. Proceed to preprocessing to apply noise removal, contrast enhancement, and normalization.</p>
+            <a href="preprocessing.html" class="btn btn-primary btn-full">
+              Continue to Preprocessing →
+            </a>
+            <div style="margin-top:10px;">
+              <button class="btn btn-secondary btn-full" onclick="clearImage()">🗑️ Clear &amp; Upload New</button>
+            </div>
+          </div>
+
+          <div class="card" id="tips-card">
+            <div class="card-title" style="margin-bottom:12px;">💡 Supported Formats</div>
+            <ul style="font-size:13px;color:var(--text-muted);padding-left:18px;line-height:2;">
+              <li>JPEG / JPG — Standard lossy compression</li>
+              <li>PNG — Lossless, ideal for medical use</li>
+              <li>BMP — Uncompressed bitmap</li>
+              <li>TIFF — High-quality radiology scans</li>
+              <li>DICOM (.dcm) — Medical imaging standard</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<canvas id="work-canvas" style="display:none;"></canvas>
+<div id="toast-container"></div>
+
+<script src="shared.js"></script>
+<script>
+  initSidebar('acquisition');
+  MediVault.load();
+
+  // Restore previous type selection
+  if (MediVault.currentImageType) {
+    document.querySelectorAll('.type-btn').forEach(btn => {
+      btn.classList.toggle('selected', btn.dataset.type === MediVault.currentImageType);
+    });
+  }
+
+  function selectType(el) {
+    document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+    MediVault.currentImageType = el.dataset.type;
+    MediVault.save();
+    if (document.getElementById('fi-type'))
+      document.getElementById('fi-type').textContent = el.dataset.type;
+  }
+
+  // Drag & drop
+  const dropZone = document.getElementById('drop-zone');
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    const f = e.dataTransfer.files[0];
+    if (f) loadFile(f);
+  });
+
+  function handleFile(e) {
+    const f = e.target.files[0];
+    if (f) loadFile(f);
+  }
+
+  function loadFile(file) {
+    MediVault.currentFile = file;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const src = ev.target.result;
+      const img = new Image();
+      img.onload = () => {
+        // Show preview
+        document.getElementById('preview-img').src = src;
+        document.getElementById('preview-wrap').style.display = 'block';
+        document.getElementById('no-preview').style.display    = 'none';
+
+        // File info
+        document.getElementById('fi-name').textContent = file.name;
+        document.getElementById('fi-size').textContent = formatBytes(file.size);
+        document.getElementById('fi-dims').textContent = img.width + ' × ' + img.height + ' px';
+        document.getElementById('fi-type').textContent = MediVault.currentImageType;
+        document.getElementById('file-info').classList.remove('hidden');
+
+        // Work canvas
+        const wc = document.getElementById('work-canvas');
+        wc.width = img.width; wc.height = img.height;
+        wc.getContext('2d').drawImage(img, 0, 0);
+
+        // Store original dataUrl in session
+        sessionStorage.setItem('mv_originalDataUrl', src);
+        // Clear any previous preprocessing
+        MediVault.preprocessedDataUrl = null;
+        MediVault.encryptionKey = null;
+        MediVault.encryptionIV  = null;
+        MediVault.sha256Hash    = null;
+        MediVault.encryptedData = null;
+        MediVault.ipfsCID       = null;
+        MediVault.ipfsUrl       = null;
+        MediVault.blockchainTx  = null;
+        MediVault.save();
+
+        // Show continue card
+        document.getElementById('acquisition-info').style.display = 'block';
+        document.getElementById('tips-card').style.display = 'none';
+
+        addAuditLog('IMAGE_UPLOAD', file.name + ' (' + formatBytes(file.size) + ') · ' + MediVault.currentImageType, 'success');
+        toast('Image loaded: ' + file.name, 'success');
+      };
+      img.src = src;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function clearImage() {
+    MediVault.currentFile = null;
+    MediVault.preprocessedDataUrl = null;
+    MediVault.save();
+    sessionStorage.removeItem('mv_originalDataUrl');
+    document.getElementById('preview-wrap').style.display   = 'none';
+    document.getElementById('no-preview').style.display     = 'block';
+    document.getElementById('file-info').classList.add('hidden');
+    document.getElementById('acquisition-info').style.display = 'none';
+    document.getElementById('tips-card').style.display = 'block';
+    document.getElementById('file-input').value = '';
+    toast('Image cleared.', 'info');
+  }
+</script>
+</body>
+</html>

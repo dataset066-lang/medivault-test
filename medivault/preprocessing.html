@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preprocessing — MediVault</title>
+  <link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<div class="app-layout">
+  <div id="sidebar-container"></div>
+  <div class="main-content">
+
+    <div class="topbar">
+      <div class="breadcrumb">
+        <span>MediVault</span><span class="bc-sep">›</span><span class="bc-active">Preprocessing</span>
+      </div>
+      <div class="topbar-right">
+        <div id="wallet-status-bar"></div>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <div class="page-header">
+        <h1 class="page-title">⚙️ Step 2 — Image Preprocessing</h1>
+        <p class="page-subtitle">Apply noise removal, contrast enhancement, normalization, and resizing to optimize the medical image for secure storage.</p>
+      </div>
+
+      <!-- Pipeline indicator -->
+      <div class="pipeline-bar">
+        <div class="pipe-step done"><span class="p-icon">🏥</span><span class="p-label">1. Acquisition</span></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step active"><span class="p-icon">⚙️</span><span class="p-label">2. Preprocessing</span></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step"><span class="p-icon">🔐</span><span class="p-label">3. Encryption</span></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step"><span class="p-icon">📦</span><span class="p-label">4. IPFS Storage</span></div>
+      </div>
+
+      <!-- No image warning -->
+      <div id="no-image-warn" class="hidden">
+        <div class="card" style="text-align:center;padding:40px;">
+          <div style="font-size:48px;margin-bottom:12px;">⚠️</div>
+          <h3 style="margin-bottom:8px;color:var(--warning);">No Image Loaded</h3>
+          <p class="text-muted mb-16">Please upload a medical image first before proceeding to preprocessing.</p>
+          <a href="acquisition.html" class="btn btn-primary">← Go to Image Acquisition</a>
+        </div>
+      </div>
+
+      <div id="main-content-wrap">
+        <div class="grid-2">
+          <!-- Left: Options -->
+          <div style="display:flex;flex-direction:column;gap:20px;">
+            <div class="card">
+              <div class="card-title" style="margin-bottom:16px;">🛠️ Processing Options</div>
+
+              <div class="toggle-row">
+                <div class="toggle-row-label">
+                  <span class="label-main">Noise Removal (Gaussian)</span>
+                  <span class="label-desc">3×3 box blur — reduces acquisition noise</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="proc-noise" checked>
+                  <span class="toggle-track"></span>
+                </label>
+              </div>
+
+              <div class="toggle-row">
+                <div class="toggle-row-label">
+                  <span class="label-main">Contrast Enhancement (CLAHE)</span>
+                  <span class="label-desc">Adaptive histogram equalization</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="proc-contrast" checked>
+                  <span class="toggle-track"></span>
+                </label>
+              </div>
+
+              <div class="toggle-row">
+                <div class="toggle-row-label">
+                  <span class="label-main">Standardization / Normalization</span>
+                  <span class="label-desc">Normalize pixel values 0–255</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="proc-normalize" checked>
+                  <span class="toggle-track"></span>
+                </label>
+              </div>
+
+              <div class="toggle-row">
+                <div class="toggle-row-label">
+                  <span class="label-main">Grayscale Conversion</span>
+                  <span class="label-desc">Convert to single-channel grayscale</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="proc-gray">
+                  <span class="toggle-track"></span>
+                </label>
+              </div>
+
+              <div class="toggle-row">
+                <div class="toggle-row-label">
+                  <span class="label-main">Auto-resize</span>
+                  <span class="label-desc">Resize to standard square dimensions</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="proc-resize" onchange="toggleResize(this)">
+                  <span class="toggle-track"></span>
+                </label>
+              </div>
+
+              <div id="resize-wrap" class="hidden" style="margin-top:14px;">
+                <div class="range-row">
+                  <div class="range-labels">
+                    <span>Target Size</span>
+                    <span id="resize-val">512 × 512 px</span>
+                  </div>
+                  <input type="range" min="128" max="1024" step="128" value="512" id="resize-range"
+                    oninput="document.getElementById('resize-val').textContent=this.value+' × '+this.value+' px'">
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title" style="margin-bottom:14px;">▶️ Run Preprocessing</div>
+              <p class="text-muted" style="margin-bottom:16px;">Apply all selected filters to the medical image. The processed result will be used for encryption.</p>
+              <button class="btn btn-primary btn-full" id="process-btn" onclick="runPreprocessing()">
+                ⚙️ Apply Preprocessing
+              </button>
+              <div id="proc-status" class="hidden" style="margin-top:14px;">
+                <div class="progress-wrap"><div class="progress-bar" id="proc-bar"></div></div>
+                <div class="step-list">
+                  <div class="step-item">
+                    <div class="step-num pending" id="ps-load-s">1</div>
+                    <div class="step-body">
+                      <div class="step-title">Loading Image</div>
+                      <div class="step-desc" id="ps-load-d">Reading original image data…</div>
+                    </div>
+                  </div>
+                  <div class="step-item">
+                    <div class="step-num pending" id="ps-filter-s">2</div>
+                    <div class="step-body">
+                      <div class="step-title">Applying Filters</div>
+                      <div class="step-desc" id="ps-filter-d">Noise removal, contrast, normalization…</div>
+                    </div>
+                  </div>
+                  <div class="step-item">
+                    <div class="step-num pending" id="ps-done-s">3</div>
+                    <div class="step-body">
+                      <div class="step-title">Finalizing Output</div>
+                      <div class="step-desc" id="ps-done-d">Saving processed image…</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Preview -->
+          <div style="display:flex;flex-direction:column;gap:20px;">
+            <div class="card">
+              <div class="card-title" style="margin-bottom:14px;">🖼️ Original Image</div>
+              <div class="img-preview-wrap" id="orig-preview-wrap" style="display:none;">
+                <img id="orig-img" src="" alt="Original">
+                <span class="img-preview-badge">ORIGINAL</span>
+              </div>
+              <div id="orig-no-img" style="text-align:center;padding:32px;color:var(--text-muted);">
+                <div style="font-size:36px;margin-bottom:8px;">🖼️</div>
+                <p class="text-sm">No image loaded</p>
+              </div>
+            </div>
+
+            <div class="card" id="proc-result-card" style="display:none;">
+              <div class="card-title" style="margin-bottom:14px;">✅ Preprocessing Complete</div>
+              <div class="img-compare">
+                <div>
+                  <canvas id="canvas-original" style="width:100%;max-height:160px;object-fit:contain;background:#000;border-radius:6px;"></canvas>
+                  <div class="p-label">Original</div>
+                </div>
+                <div>
+                  <canvas id="canvas-processed" style="width:100%;max-height:160px;object-fit:contain;background:#000;border-radius:6px;"></canvas>
+                  <div class="p-label">Processed</div>
+                </div>
+              </div>
+              <div class="info-grid" style="margin-top:16px;grid-template-columns:1fr 1fr;">
+                <div class="info-item"><div class="i-label">Output Size</div><div class="i-value primary" id="proc-out-size">—</div></div>
+                <div class="info-item"><div class="i-label">Dimensions</div><div class="i-value" id="proc-out-dims">—</div></div>
+              </div>
+              <div style="margin-top:16px;">
+                <a href="encryption.html" class="btn btn-primary btn-full">Continue to Encryption →</a>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title" style="margin-bottom:12px;">📖 Why Preprocess?</div>
+              <ul style="font-size:13px;color:var(--text-muted);padding-left:18px;line-height:2;">
+                <li><strong>Noise Removal</strong> — eliminates sensor artifacts</li>
+                <li><strong>Contrast Enhancement</strong> — improves diagnostic visibility</li>
+                <li><strong>Normalization</strong> — standardizes pixel intensity range</li>
+                <li><strong>Resizing</strong> — ensures consistent dimensions for ML</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<canvas id="work-canvas" style="display:none;"></canvas>
+<div id="toast-container"></div>
+
+<script src="shared.js"></script>
+<script>
+  initSidebar('preprocessing');
+  MediVault.load();
+
+  // Load original image from sessionStorage
+  const origSrc = sessionStorage.getItem('mv_originalDataUrl');
+  if (!origSrc) {
+    document.getElementById('no-image-warn').classList.remove('hidden');
+    document.getElementById('main-content-wrap').style.display = 'none';
+  } else {
+    document.getElementById('orig-img').src = origSrc;
+    document.getElementById('orig-preview-wrap').style.display = 'block';
+    document.getElementById('orig-no-img').style.display = 'none';
+
+    // Set up work canvas
+    const wc = document.getElementById('work-canvas');
+    const img = new Image();
+    img.onload = () => {
+      wc.width = img.naturalWidth;
+      wc.height = img.naturalHeight;
+      wc.getContext('2d').drawImage(img, 0, 0);
+    };
+    img.src = origSrc;
+  }
+
+  function toggleResize(cb) {
+    document.getElementById('resize-wrap').classList.toggle('hidden', !cb.checked);
+  }
+
+  async function runPreprocessing() {
+    const btn = document.getElementById('process-btn');
+    btn.disabled = true;
+    document.getElementById('proc-status').classList.remove('hidden');
+    setElProgress('proc-bar', 0);
+
+    try {
+      setStepStatus('ps-load-s', 'running');
+      setStepDesc('ps-load-d', 'Loading original image data…');
+      await delay(300);
+
+      const srcUrl = sessionStorage.getItem('mv_originalDataUrl');
+      if (!srcUrl) throw new Error('No source image found. Please upload an image first.');
+
+      setStepStatus('ps-load-s', 'done');
+      setElProgress('proc-bar', 33);
+
+      setStepStatus('ps-filter-s', 'running');
+      const steps = [];
+      if (document.getElementById('proc-noise').checked)    steps.push('Noise Removal');
+      if (document.getElementById('proc-contrast').checked) steps.push('Contrast Enhancement');
+      if (document.getElementById('proc-normalize').checked) steps.push('Normalization');
+      if (document.getElementById('proc-gray').checked)     steps.push('Grayscale');
+      if (document.getElementById('proc-resize').checked)   steps.push('Resize');
+      setStepDesc('ps-filter-d', 'Applying: ' + (steps.join(', ') || 'None'));
+      await delay(200);
+
+      const processedDataUrl = await preprocessImage({
+        noiseRemoval:       document.getElementById('proc-noise').checked,
+        contrastEnhancement: document.getElementById('proc-contrast').checked,
+        normalize:          document.getElementById('proc-normalize').checked,
+        grayscale:          document.getElementById('proc-gray').checked,
+        resize:             document.getElementById('proc-resize').checked,
+        resizeSize:         document.getElementById('resize-range').value,
+        workCanvasId:       'work-canvas',
+        originalSrc:        srcUrl,
+      });
+
+      setStepStatus('ps-filter-s', 'done');
+      setElProgress('proc-bar', 66);
+
+      setStepStatus('ps-done-s', 'running');
+      setStepDesc('ps-done-d', 'Saving processed image to session…');
+
+      // Save result
+      MediVault.preprocessedDataUrl = processedDataUrl;
+      MediVault.save();
+      sessionStorage.setItem('mv_preprocessedDataUrl', processedDataUrl);
+
+      // Draw compare canvases
+      const origImg = new Image();
+      origImg.onload = () => {
+        const co = document.getElementById('canvas-original');
+        co.width = origImg.naturalWidth; co.height = origImg.naturalHeight;
+        co.getContext('2d').drawImage(origImg, 0, 0);
+      };
+      origImg.src = srcUrl;
+
+      const procImg = new Image();
+      procImg.onload = () => {
+        const cp = document.getElementById('canvas-processed');
+        cp.width = procImg.naturalWidth; cp.height = procImg.naturalHeight;
+        cp.getContext('2d').drawImage(procImg, 0, 0);
+      };
+      procImg.src = processedDataUrl;
+
+      const wc = document.getElementById('work-canvas');
+      document.getElementById('proc-out-dims').textContent = wc.width + ' × ' + wc.height + ' px';
+
+      // Approximate output size from base64 length
+      const b64len = processedDataUrl.split(',')[1].length;
+      document.getElementById('proc-out-size').textContent = formatBytes(Math.round(b64len * 0.75));
+
+      setStepStatus('ps-done-s', 'done');
+      setElProgress('proc-bar', 100);
+
+      document.getElementById('proc-result-card').style.display = 'block';
+      addAuditLog('PREPROCESSING', steps.join(', ') || 'No filters', 'success');
+      toast('Preprocessing complete!', 'success');
+
+    } catch(err) {
+      toast('Error: ' + err.message, 'error');
+      addAuditLog('PREPROCESSING', err.message, 'error');
+      console.error(err);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+</script>
+</body>
+</html>

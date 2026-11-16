@@ -1,0 +1,2308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MedImage IPFS — Secure Medical Image Storage</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #1f2937;
+      --border: #30363d;
+      --accent: #58a6ff;
+      --accent2: #3fb950;
+      --warn: #d29922;
+      --danger: #f85149;
+      --purple: #8b5cf6;
+      --teal: #14b8a6;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    header .logo {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--accent), var(--purple));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    header h1 { font-size: 20px; font-weight: 700; }
+    header p { font-size: 13px; color: var(--muted); margin-left: auto; }
+
+    /* ── Pipeline Bar ── */
+    .pipeline {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      padding: 20px 32px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+    }
+    .pipe-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 20px;
+      border-radius: var(--radius);
+      cursor: default;
+      min-width: 110px;
+      transition: background 0.2s;
+      position: relative;
+    }
+    .pipe-step .icon { font-size: 22px; }
+    .pipe-step .label { font-size: 11px; font-weight: 600; text-align: center; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+    .pipe-step.active .label { color: var(--text); }
+    .pipe-step.done .label { color: var(--accent2); }
+
+    .pipe-step.active { background: rgba(88,166,255,.08); }
+    .pipe-step.done   { background: rgba(63,185,80,.08); }
+
+    .pipe-arrow { color: var(--muted); font-size: 20px; padding: 0 4px; flex-shrink: 0; }
+
+    /* ── Main Layout ── */
+    main {
+      max-width: 1100px;
+      margin: 32px auto;
+      padding: 0 24px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 768px) {
+      main { grid-template-columns: 1fr; }
+      header p { display: none; }
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      color: var(--muted);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-title span { font-size: 16px; }
+
+    /* ── Upload Zone ── */
+    .upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 40px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: var(--accent);
+      background: rgba(88,166,255,.05);
+    }
+    .upload-zone input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .upload-zone .upload-icon { font-size: 36px; margin-bottom: 10px; }
+    .upload-zone p { font-size: 14px; color: var(--muted); }
+    .upload-zone strong { color: var(--accent); }
+
+    /* ── Image type selector ── */
+    .type-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .type-btn {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 4px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--muted);
+      background: var(--surface2);
+      transition: all 0.15s;
+      user-select: none;
+    }
+    .type-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .type-btn.selected { border-color: var(--accent); color: var(--accent); background: rgba(88,166,255,.1); }
+    .type-btn .t-icon { font-size: 18px; display: block; margin-bottom: 4px; }
+
+    /* ── Preview ── */
+    #preview-wrap {
+      margin-top: 16px;
+      border-radius: 8px;
+      overflow: hidden;
+      display: none;
+      position: relative;
+    }
+    #preview-img {
+      width: 100%;
+      max-height: 220px;
+      object-fit: contain;
+      background: #000;
+      display: block;
+    }
+    #preview-label {
+      position: absolute;
+      top: 8px; left: 8px;
+      background: rgba(0,0,0,.7);
+      color: var(--warn);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      letter-spacing: .5px;
+    }
+
+    /* ── Processing Options ── */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .toggle-row:last-child { border-bottom: none; }
+    .toggle-row label { font-size: 14px; display: flex; align-items: center; gap: 8px; }
+    .toggle-row .desc { font-size: 12px; color: var(--muted); display: block; }
+
+    /* Toggle switch */
+    .toggle {
+      position: relative; width: 40px; height: 22px; flex-shrink: 0;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; inset: 0;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      cursor: pointer;
+      transition: .2s;
+    }
+    .toggle-slider:before {
+      content: '';
+      position: absolute;
+      width: 16px; height: 16px;
+      left: 2px; top: 2px;
+      background: var(--muted);
+      border-radius: 50%;
+      transition: .2s;
+    }
+    .toggle input:checked + .toggle-slider { background: var(--accent); border-color: var(--accent); }
+    .toggle input:checked + .toggle-slider:before { transform: translateX(18px); background: #fff; }
+
+    /* Range input */
+    .range-row { margin-top: 8px; }
+    .range-row input[type=range] {
+      -webkit-appearance: none;
+      width: 100%; height: 4px;
+      border-radius: 2px;
+      background: var(--surface2);
+      outline: none;
+    }
+    .range-row input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+    }
+    .range-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+
+    /* ── Encryption Panel ── */
+    .key-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      font-family: 'Cascadia Code', 'Courier New', monospace;
+      font-size: 12px;
+      color: var(--accent2);
+      word-break: break-all;
+      margin-top: 8px;
+      position: relative;
+    }
+    .key-box .copy-btn {
+      position: absolute; top: 8px; right: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 11px;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .key-box .copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+    .select-input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 8px 12px;
+      font-size: 13px;
+      outline: none;
+      margin-top: 8px;
+    }
+    .select-input:focus { border-color: var(--accent); }
+
+    /* ── Action Button ── */
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      border-radius: var(--radius);
+      border: none;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--accent), var(--purple));
+      color: #fff;
+      letter-spacing: .3px;
+      transition: opacity .2s, transform .1s;
+      margin-top: 20px;
+    }
+    .btn-primary:hover { opacity: .9; transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+    /* ── Progress ── */
+    #progress-section { display: none; margin-top: 20px; }
+    .progress-step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .progress-step:last-child { border-bottom: none; }
+    .step-status { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+    .step-status.pending { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); }
+    .step-status.running { background: rgba(210,153,34,.15); border: 1px solid var(--warn); color: var(--warn); animation: pulse 1s infinite; }
+    .step-status.done    { background: rgba(63,185,80,.15); border: 1px solid var(--accent2); color: var(--accent2); }
+    .step-status.error   { background: rgba(248,81,73,.15); border: 1px solid var(--danger); color: var(--danger); }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+
+    .progress-bar-wrap {
+      background: var(--surface2);
+      border-radius: 4px;
+      height: 6px;
+      margin-top: 12px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--purple));
+      border-radius: 4px;
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+
+    /* ── Results Panel ── */
+    #result-section {
+      grid-column: 1 / -1;
+      display: none;
+    }
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .result-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .result-item .r-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+    .result-item .r-value {
+      font-size: 13px;
+      font-family: 'Cascadia Code', monospace;
+      color: var(--accent);
+      word-break: break-all;
+    }
+    .result-item .r-value.cid {
+      color: var(--teal);
+      font-size: 12px;
+    }
+    .result-item .r-value.green { color: var(--accent2); }
+
+    .cid-banner {
+      background: linear-gradient(135deg, rgba(20,184,166,.1), rgba(139,92,246,.1));
+      border: 1px solid var(--teal);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-top: 16px;
+      text-align: center;
+    }
+    .cid-banner .cid-title { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .cid-banner .cid-hash {
+      font-size: 18px;
+      font-family: 'Cascadia Code', monospace;
+      color: var(--teal);
+      word-break: break-all;
+      font-weight: 700;
+    }
+    .cid-banner .cid-link {
+      display: inline-block;
+      margin-top: 12px;
+      color: var(--accent);
+      font-size: 13px;
+      text-decoration: none;
+    }
+    .cid-banner .cid-link:hover { text-decoration: underline; }
+
+    .processed-preview {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .processed-preview > div { text-align: center; }
+    .processed-preview canvas, .processed-preview img {
+      width: 100%;
+      max-height: 160px;
+      object-fit: contain;
+      background: #000;
+      border-radius: 8px;
+      display: block;
+    }
+    .processed-preview .p-label { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 24px; right: 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 18px;
+      font-size: 14px;
+      display: none;
+      z-index: 999;
+      box-shadow: 0 8px 24px rgba(0,0,0,.4);
+    }
+    #toast.show { display: flex; align-items: center; gap: 8px; }
+    #toast.success { border-color: var(--accent2); }
+    #toast.error   { border-color: var(--danger); }
+
+    /* ── History ── */
+    #history-section { margin-top: 24px; display: none; }
+    .history-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .history-row:last-child { border-bottom: none; }
+    .history-thumb {
+      width: 40px; height: 40px;
+      border-radius: 6px;
+      object-fit: cover;
+      background: #000;
+      flex-shrink: 0;
+    }
+    .history-info { flex: 1; min-width: 0; }
+    .history-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .history-cid  { font-size: 11px; color: var(--teal); font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .history-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--accent2);
+      color: var(--accent2);
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header>
+  <div class="logo">🧠</div>
+  <h1>MedImage IPFS</h1>
+  <p>Secure Medical Image Processing &amp; Decentralized Storage</p>
+
+  <!-- MetaMask Wallet Toggle -->
+  <div id="wallet-bar" style="margin-left:auto;display:flex;align-items:center;gap:12px;">
+
+    <!-- Status text -->
+    <div id="wallet-status" style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;">
+      <span id="wallet-dot" style="width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block;"></span>
+      <span id="wallet-status-text">Not Connected</span>
+    </div>
+
+    <!-- Toggle Switch -->
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:12px;color:var(--muted);">Disconnected</span>
+      <label style="position:relative;display:inline-block;width:52px;height:26px;cursor:pointer;">
+        <input type="checkbox" id="wallet-toggle" onchange="onWalletToggle(this)"
+          style="opacity:0;width:0;height:0;position:absolute;" />
+        <span id="wallet-toggle-track" style="
+          position:absolute;inset:0;
+          background:#f6851b;
+          border-radius:13px;
+          transition:background .3s;
+          display:flex;align-items:center;
+        ">
+          <span id="wallet-toggle-thumb" style="
+            position:absolute;left:3px;
+            width:20px;height:20px;
+            background:#fff;
+            border-radius:50%;
+            transition:transform .3s;
+            box-shadow:0 1px 4px rgba(0,0,0,.3);
+          "></span>
+        </span>
+      </label>
+      <span style="font-size:12px;color:var(--muted);">Connected</span>
+    </div>
+  </div>
+</header>
+
+<!-- ── Pipeline Indicator ── -->
+<div class="pipeline" id="pipeline">
+  <div class="pipe-step active" id="pstep-0">
+    <span class="icon">🏥</span>
+    <span class="label">1. Acquisition</span>
+  </div>
+  <div class="pipe-arrow">→</div>
+  <div class="pipe-step" id="pstep-1">
+    <span class="icon">⚙️</span>
+    <span class="label">2. Preprocessing</span>
+  </div>
+  <div class="pipe-arrow">→</div>
+  <div class="pipe-step" id="pstep-2">
+    <span class="icon">🔐</span>
+    <span class="label">3. AES-256</span>
+  </div>
+  <div class="pipe-arrow">→</div>
+  <div class="pipe-step" id="pstep-3">
+    <span class="icon">📦</span>
+    <span class="label">4. IPFS Storage</span>
+  </div>
+</div>
+
+<!-- ── Main ── -->
+<main>
+
+  <!-- Left column -->
+  <div style="display:flex;flex-direction:column;gap:24px;">
+
+    <!-- Step 1: Image Acquisition -->
+    <div class="card">
+      <div class="card-title"><span>🏥</span> Step 1 — Medical Image Acquisition</div>
+
+      <!-- Image type selector -->
+      <div class="type-grid">
+        <div class="type-btn selected" data-type="CT Scan" onclick="selectType(this)">
+          <span class="t-icon">🔬</span>CT Scan
+        </div>
+        <div class="type-btn" data-type="MRI" onclick="selectType(this)">
+          <span class="t-icon">🧲</span>MRI
+        </div>
+        <div class="type-btn" data-type="X-Ray" onclick="selectType(this)">
+          <span class="t-icon">☢️</span>X-Ray
+        </div>
+        <div class="type-btn" data-type="Ultrasound" onclick="selectType(this)">
+          <span class="t-icon">📡</span>Ultrasound
+        </div>
+        <div class="type-btn" data-type="PET Scan" onclick="selectType(this)">
+          <span class="t-icon">🫀</span>PET Scan
+        </div>
+        <div class="type-btn" data-type="Other" onclick="selectType(this)">
+          <span class="t-icon">📁</span>Other
+        </div>
+      </div>
+
+      <!-- Upload -->
+      <div class="upload-zone" id="drop-zone" style="margin-top:16px;">
+        <input type="file" id="file-input" accept="image/*,.dcm" onchange="handleFile(event)" />
+        <div class="upload-icon">📤</div>
+        <p><strong>Click to upload</strong> or drag &amp; drop</p>
+        <p style="margin-top:4px;font-size:12px;">PNG, JPG, BMP, TIFF, DICOM</p>
+      </div>
+
+      <!-- Preview -->
+      <div id="preview-wrap">
+        <img id="preview-img" src="" alt="Preview" />
+        <span id="preview-label">ORIGINAL</span>
+      </div>
+
+      <!-- File info -->
+      <div id="file-info" style="margin-top:12px;display:none;">
+        <div class="result-grid" style="grid-template-columns:1fr 1fr;">
+          <div class="result-item">
+            <div class="r-label">File Name</div>
+            <div class="r-value" id="fi-name" style="font-size:12px;">—</div>
+          </div>
+          <div class="result-item">
+            <div class="r-label">File Size</div>
+            <div class="r-value" id="fi-size">—</div>
+          </div>
+          <div class="result-item">
+            <div class="r-label">Dimensions</div>
+            <div class="r-value" id="fi-dims">—</div>
+          </div>
+          <div class="result-item">
+            <div class="r-label">Type</div>
+            <div class="r-value" id="fi-type" class="green">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Encryption -->
+    <div class="card">
+      <div class="card-title"><span>🔐</span> Step 3 — AES-256 Encryption</div>
+
+      <div class="toggle-row">
+        <label>
+          Enable Encryption
+          <span class="desc">AES-256-GCM with random IV</span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="enc-toggle" checked onchange="toggleEncryption(this)" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div id="enc-options">
+        <p style="font-size:13px;color:var(--muted);margin-top:12px;">Encryption Key (auto-generated)</p>
+        <div class="key-box" id="enc-key">
+          <span id="enc-key-val">— Generate by processing —</span>
+          <button class="copy-btn" onclick="copyKey()">Copy</button>
+        </div>
+
+        <p style="font-size:13px;color:var(--muted);margin-top:12px;">Key Derivation</p>
+        <select class="select-input" id="kdf-select">
+          <option value="random">Random Key (256-bit)</option>
+          <option value="pbkdf2">PBKDF2 from Password</option>
+        </select>
+
+        <div id="pwd-wrap" style="display:none;margin-top:8px;">
+          <input type="password" class="select-input" id="enc-password" placeholder="Enter passphrase…" style="margin-top:4px;" />
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Right column -->
+  <div style="display:flex;flex-direction:column;gap:24px;">
+
+    <!-- Step 2: Preprocessing -->
+    <div class="card">
+      <div class="card-title"><span>⚙️</span> Step 2 — Image Preprocessing</div>
+
+      <div class="toggle-row">
+        <label>
+          Noise Removal (Gaussian)
+          <span class="desc">Reduces acquisition noise</span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="proc-noise" checked />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="toggle-row">
+        <label>
+          Contrast Enhancement (CLAHE)
+          <span class="desc">Adaptive histogram equalization</span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="proc-contrast" checked />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="toggle-row">
+        <label>
+          Standardization / Normalization
+          <span class="desc">Normalize pixel values 0–255</span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="proc-normalize" checked />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="toggle-row">
+        <label>
+          Auto-resize
+          <span class="desc">Resize to standard dimensions</span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="proc-resize" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="range-row" id="resize-wrap" style="display:none;margin-top:12px;">
+        <div class="range-label">
+          <span>Target Size</span>
+          <span id="resize-val">512 × 512 px</span>
+        </div>
+        <input type="range" min="128" max="1024" step="128" value="512" id="resize-range"
+          oninput="document.getElementById('resize-val').textContent=this.value+' × '+this.value+' px'" />
+      </div>
+
+      <div class="toggle-row" style="margin-top:8px;">
+        <label>
+          Grayscale Conversion
+          <span class="desc">Convert to single-channel</span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="proc-gray" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <!-- Processed previews -->
+      <div id="proc-previews" style="display:none;">
+        <p style="font-size:12px;color:var(--muted);margin-top:16px;">Processing Preview</p>
+        <div class="processed-preview">
+          <div>
+            <canvas id="canvas-original"></canvas>
+            <div class="p-label">Original</div>
+          </div>
+          <div>
+            <canvas id="canvas-processed"></canvas>
+            <div class="p-label">Processed</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 4: IPFS -->
+    <div class="card">
+      <div class="card-title"><span>📦</span> Step 4 — IPFS Storage</div>
+
+      <!-- Provider selector -->
+      <div class="toggle-row">
+        <label>
+          Provider
+          <span class="desc">Real IPFS pinning service</span>
+        </label>
+        <select class="select-input" id="ipfs-provider" style="width:auto;min-width:160px;" onchange="onProviderChange()">
+          <option value="pinata">Pinata (JWT)</option>
+          <option value="web3storage">web3.storage (token)</option>
+          <option value="local">Local Node (localhost:5001)</option>
+        </select>
+      </div>
+
+      <!-- Pinata JWT -->
+      <div id="wrap-pinata" style="margin-top:10px;">
+        <p style="font-size:12px;color:var(--accent2);margin-bottom:4px;">
+          Enter your Pinata JWT to upload</p>
+        <input type="password" class="select-input" id="pinata-jwt"
+          autocomplete="off" style="font-size:11px;" />
+      </div>
+
+      <!-- web3.storage token -->
+      <div id="wrap-web3storage" style="margin-top:10px;display:none;">
+        <p style="font-size:12px;color:var(--muted);margin-bottom:4px;">
+          web3.storage token —
+          <a href="https://web3.storage/account/" target="_blank" style="color:var(--accent);">get free key ↗</a>
+        </p>
+        <input type="password" class="select-input" id="web3storage-token"
+          placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6…" autocomplete="off" />
+      </div>
+
+      <!-- Local node note -->
+      <div id="wrap-local" style="margin-top:10px;display:none;">
+        <p style="font-size:12px;color:var(--warn);">
+          ⚠️ Requires a local IPFS daemon running at <code style="color:var(--accent);">localhost:5001</code>.
+          Browser must be served over HTTP (not HTTPS) due to CORS.
+        </p>
+      </div>
+
+      <div class="toggle-row" style="margin-top:12px;">
+        <label>
+          Store Metadata JSON
+          <span class="desc">Also pin metadata as separate CID</span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="ipfs-meta" checked />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="toggle-row">
+        <label>
+          Generate QR Code
+          <span class="desc">QR for IPFS CID</span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="gen-qr" checked />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <!-- Status indicator -->
+      <div id="ipfs-status-badge" style="display:none;margin-top:12px;padding:8px 12px;border-radius:8px;font-size:12px;border:1px solid var(--border);"></div>
+    </div>
+
+  </div>
+
+  <!-- Action + Progress (full width) -->
+  <div style="grid-column:1/-1;">
+    <div class="card">
+      <button class="btn-primary" id="process-btn" onclick="startPipeline()" disabled>
+        🚀 Process &amp; Upload to IPFS
+      </button>
+
+      <!-- Progress -->
+      <div id="progress-section">
+        <div class="progress-bar-wrap" style="margin-top:16px;">
+          <div class="progress-bar" id="progress-bar"></div>
+        </div>
+
+        <div style="margin-top:16px;">
+          <div class="progress-step" id="ps-load">
+            <div class="step-status pending" id="ps-load-s">1</div>
+            <div>
+              <div>Loading Image</div>
+              <div style="font-size:12px;color:var(--muted);">Read file and decode pixels</div>
+            </div>
+          </div>
+          <div class="progress-step" id="ps-preprocess">
+            <div class="step-status pending" id="ps-preprocess-s">2</div>
+            <div>
+              <div>Preprocessing</div>
+              <div style="font-size:12px;color:var(--muted);" id="ps-preprocess-detail">Noise removal, contrast enhancement…</div>
+            </div>
+          </div>
+          <div class="progress-step" id="ps-encrypt">
+            <div class="step-status pending" id="ps-encrypt-s">3</div>
+            <div>
+              <div>AES-256 Encryption</div>
+              <div style="font-size:12px;color:var(--muted);">Encrypting image data</div>
+            </div>
+          </div>
+          <div class="progress-step" id="ps-hash">
+            <div class="step-status pending" id="ps-hash-s">4</div>
+            <div>
+              <div>Computing SHA-256 Hash</div>
+              <div style="font-size:12px;color:var(--muted);">Content integrity verification</div>
+            </div>
+          </div>
+          <div class="progress-step" id="ps-ipfs">
+            <div class="step-status pending" id="ps-ipfs-s">5</div>
+            <div>
+              <div>Uploading to IPFS</div>
+              <div style="font-size:12px;color:var(--muted);" id="ps-ipfs-detail">Connecting to gateway…</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results (full width) -->
+  <div id="result-section">
+    <div class="card">
+      <div class="card-title"><span>✅</span> Pipeline Complete</div>
+
+      <!-- CID Banner -->
+      <div class="cid-banner">
+        <div class="cid-title">IPFS Content Identifier (CID)</div>
+        <div class="cid-hash" id="res-cid">—</div>
+        <div style="margin-top:12px;">
+          <a href="#" class="cid-link" id="res-link-pinata" target="_blank"
+            style="background:rgba(88,166,255,.1);padding:8px 20px;border-radius:8px;
+                   border:1px solid var(--accent);font-size:13px;text-decoration:none;color:var(--accent);">
+            🔗 Open on IPFS Gateway
+          </a>
+        </div>
+      </div>
+
+      <div class="result-grid" style="margin-top:16px;">
+        <div class="result-item">
+          <div class="r-label">SHA-256 Hash</div>
+          <div class="r-value" id="res-hash" style="font-size:11px;">—</div>
+        </div>
+        <div class="result-item">
+          <div class="r-label">Encryption</div>
+          <div class="r-value green" id="res-enc">—</div>
+        </div>
+        <div class="result-item">
+          <div class="r-label">Original Size</div>
+          <div class="r-value" id="res-orig-size">—</div>
+        </div>
+        <div class="result-item">
+          <div class="r-label">Processed Size</div>
+          <div class="r-value" id="res-proc-size">—</div>
+        </div>
+        <div class="result-item">
+          <div class="r-label">Image Type</div>
+          <div class="r-value green" id="res-imgtype">—</div>
+        </div>
+        <div class="result-item">
+          <div class="r-label">Timestamp</div>
+          <div class="r-value" id="res-ts" style="font-size:11px;">—</div>
+        </div>
+      </div>
+
+      <!-- QR Code -->
+      <div id="qr-wrap" style="text-align:center;margin-top:16px;display:none;">
+        <p style="font-size:12px;color:var(--muted);margin-bottom:8px;">QR Code — IPFS CID</p>
+        <div id="qr-canvas" style="display:inline-block;padding:12px;background:#fff;border-radius:12px;"></div>
+      </div>
+
+      <!-- IV for decryption -->
+      <div id="iv-section" style="display:none;margin-top:16px;">
+        <p style="font-size:13px;color:var(--muted);">Decryption IV (save this!)</p>
+        <div class="key-box">
+          <span id="res-iv" style="color:var(--warn);">—</span>
+          <button class="copy-btn" onclick="copyEl('res-iv')">Copy</button>
+        </div>
+      </div>
+
+      <button class="btn-primary" style="background:linear-gradient(135deg,var(--teal),var(--accent2));margin-top:16px;"
+        onclick="downloadReport()">
+        📄 Download Processing Report (JSON)
+      </button>
+
+      <!-- Blockchain Store Button -->
+      <div id="blockchain-section" style="display:none;margin-top:16px;">
+        <div style="border-top:1px solid var(--border);padding-top:16px;">
+          <div class="card-title" style="margin-bottom:12px;"><span>⛓️</span> Step 5 — Store on Blockchain via MetaMask</div>
+
+          <!-- MetaMask setup instructions -->
+          <div id="mm-setup-hint" style="background:rgba(246,133,27,.08);border:1px solid #f6851b;border-radius:8px;padding:12px;margin-bottom:12px;font-size:12px;line-height:1.6;">
+            <strong style="color:#f6851b;">🦊 One-Time MetaMask Setup:</strong><br>
+            1. Open MetaMask → Settings → <strong>Security &amp; Privacy</strong><br>
+            2. Turn <strong>"Blockaid"</strong> OFF<br>
+            3. Toggle the wallet switch above to connect, then confirm the transaction ✅
+            <button onclick="document.getElementById('mm-setup-hint').style.display='none'"
+              style="float:right;background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;">✕</button>
+          </div>
+
+          <div id="bc-wallet-info" style="display:none;margin-bottom:12px;">
+            <div class="result-grid" style="grid-template-columns:1fr 1fr;">
+              <div class="result-item">
+                <div class="r-label">Connected Wallet</div>
+                <div class="r-value" id="bc-wallet" style="font-size:11px;">—</div>
+              </div>
+              <div class="result-item">
+                <div class="r-label">Network</div>
+                <div class="r-value green" id="bc-network">—</div>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn-primary" id="store-chain-btn"
+            style="background:linear-gradient(135deg,#f6851b,#8b5cf6);margin-top:0;"
+            onclick="storeOnBlockchain()">
+            🦊 Sign &amp; Store on Blockchain via MetaMask
+          </button>
+          <div id="bc-status" style="display:none;margin-top:12px;padding:12px;border-radius:8px;font-size:13px;border:1px solid var(--border);"></div>
+        </div>
+      </div>
+
+      <!-- Blockchain Transaction Result -->
+      <div id="bc-result" style="display:none;margin-top:16px;">
+        <div style="border-top:1px solid var(--border);padding-top:16px;">
+          <div class="card-title" style="margin-bottom:12px;color:var(--accent2);"><span>✅</span> Blockchain Record Saved</div>
+          <div class="result-grid" style="grid-template-columns:1fr 1fr 1fr;">
+            <div class="result-item">
+              <div class="r-label">Transaction Hash</div>
+              <div class="r-value" id="bc-tx-hash" style="font-size:10px;color:var(--accent);">—</div>
+            </div>
+            <div class="result-item">
+              <div class="r-label">Record ID</div>
+              <div class="r-value green" id="bc-record-id">—</div>
+            </div>
+            <div class="result-item">
+              <div class="r-label">Block Number</div>
+              <div class="r-value" id="bc-block">—</div>
+            </div>
+            <div class="result-item">
+              <div class="r-label">Gas Used</div>
+              <div class="r-value" id="bc-gas">—</div>
+            </div>
+            <div class="result-item">
+              <div class="r-label">Contract Address</div>
+              <div class="r-value" id="bc-contract" style="font-size:10px;">—</div>
+            </div>
+            <div class="result-item">
+              <div class="r-label">Blockchain</div>
+              <div class="r-value green">Ganache Local</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- History -->
+  <div id="history-section" style="grid-column:1/-1;">
+    <div class="card">
+      <div class="card-title"><span>🗂️</span> Upload History</div>
+      <div id="history-list"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       Step 7 — Secure Retrieval & Decryption
+       ══════════════════════════════════════ -->
+  <div style="grid-column:1/-1;">
+    <div class="card">
+      <div class="card-title"><span>🔓</span> Step 7 — Secure Retrieval &amp; Decryption</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:20px;">
+        Download the encrypted image from IPFS, verify its integrity using SHA-256, decrypt it using AES-256-GCM, and access the original medical image.
+      </p>
+
+      <!-- Pipeline steps visual -->
+      <div style="display:flex;align-items:center;gap:0;margin-bottom:24px;overflow-x:auto;padding:4px 0;">
+        <div style="text-align:center;min-width:110px;padding:10px;background:rgba(88,166,255,.08);border-radius:8px;">
+          <div style="font-size:22px;">🔗</div>
+          <div style="font-size:10px;color:var(--muted);font-weight:700;margin-top:4px;">RETRIEVE CID</div>
+        </div>
+        <div style="color:var(--muted);padding:0 6px;font-size:18px;">→</div>
+        <div style="text-align:center;min-width:110px;padding:10px;background:rgba(88,166,255,.08);border-radius:8px;">
+          <div style="font-size:22px;">📥</div>
+          <div style="font-size:10px;color:var(--muted);font-weight:700;margin-top:4px;">IPFS DOWNLOAD</div>
+        </div>
+        <div style="color:var(--muted);padding:0 6px;font-size:18px;">→</div>
+        <div style="text-align:center;min-width:110px;padding:10px;background:rgba(139,92,246,.08);border-radius:8px;">
+          <div style="font-size:22px;">🔍</div>
+          <div style="font-size:10px;color:var(--muted);font-weight:700;margin-top:4px;">SHA-256 VERIFY</div>
+        </div>
+        <div style="color:var(--muted);padding:0 6px;font-size:18px;">→</div>
+        <div style="text-align:center;min-width:110px;padding:10px;background:rgba(139,92,246,.08);border-radius:8px;">
+          <div style="font-size:22px;">🔐</div>
+          <div style="font-size:10px;color:var(--muted);font-weight:700;margin-top:4px;">AES-256 DECRYPT</div>
+        </div>
+        <div style="color:var(--muted);padding:0 6px;font-size:18px;">→</div>
+        <div style="text-align:center;min-width:110px;padding:10px;background:rgba(20,184,166,.08);border-radius:8px;">
+          <div style="font-size:22px;">🖼️</div>
+          <div style="font-size:10px;color:var(--muted);font-weight:700;margin-top:4px;">VIEW IMAGE</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+
+        <!-- Left: Inputs -->
+        <div style="display:flex;flex-direction:column;gap:14px;">
+
+          <div>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:6px;">IPFS Content Identifier (CID) <span style="color:var(--danger);">*</span></p>
+            <div style="display:flex;gap:8px;">
+              <input class="select-input" id="dec-cid" placeholder="bafybeig... or Qm..."
+                style="margin-top:0;flex:1;" />
+              <button onclick="autofillFromResult()"
+                style="background:rgba(88,166,255,.15);border:1px solid var(--accent);color:var(--accent);
+                       border-radius:8px;padding:8px 12px;cursor:pointer;font-size:12px;white-space:nowrap;">
+                ⚡ Auto-fill
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:6px;">AES-256 Encryption Key (Hex) <span style="color:var(--danger);">*</span></p>
+            <input class="select-input" id="dec-key" placeholder="64-character hex encryption key..."
+              style="margin-top:0;font-family:monospace;font-size:11px;" />
+          </div>
+
+          <div>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:6px;">Initialization Vector — IV (Hex) <span style="color:var(--danger);">*</span></p>
+            <input class="select-input" id="dec-iv" placeholder="24-character hex IV..."
+              style="margin-top:0;font-family:monospace;font-size:11px;" />
+          </div>
+
+          <div>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:6px;">IPFS Gateway</p>
+            <select class="select-input" id="dec-gateway" style="margin-top:0;">
+              <option value="https://gateway.pinata.cloud/ipfs/">Pinata Gateway</option>
+              <option value="https://ipfs.io/ipfs/">ipfs.io</option>
+              <option value="https://cloudflare-ipfs.com/ipfs/">Cloudflare IPFS</option>
+              <option value="https://dweb.link/ipfs/">dweb.link</option>
+            </select>
+          </div>
+
+          <button class="btn-primary" onclick="startDecryption()"
+            style="background:linear-gradient(135deg,var(--purple),var(--teal));margin-top:4px;">
+            🔓 Retrieve &amp; Decrypt Image
+          </button>
+        </div>
+
+        <!-- Right: Status + Result -->
+        <div style="display:flex;flex-direction:column;gap:14px;">
+
+          <!-- Progress steps -->
+          <div id="dec-progress" style="display:none;">
+            <div class="progress-bar-wrap"><div class="progress-bar" id="dec-bar"></div></div>
+            <div style="margin-top:12px;">
+              <div class="progress-step">
+                <div class="step-status pending" id="dps-fetch-s">1</div>
+                <div><div>Downloading Encrypted File from IPFS</div>
+                  <div style="font-size:11px;color:var(--muted);" id="dps-fetch-d">Connecting to gateway…</div></div>
+              </div>
+              <div class="progress-step">
+                <div class="step-status pending" id="dps-verify-s">2</div>
+                <div><div>SHA-256 Integrity Verification</div>
+                  <div style="font-size:11px;color:var(--muted);" id="dps-verify-d">Computing and verifying file hash…</div></div>
+              </div>
+              <div class="progress-step">
+                <div class="step-status pending" id="dps-decrypt-s">3</div>
+                <div><div>AES-256-GCM Decryption</div>
+                  <div style="font-size:11px;color:var(--muted);">Decrypting image using key and IV…</div></div>
+              </div>
+              <div class="progress-step" style="border-bottom:none;">
+                <div class="step-status pending" id="dps-render-s">4</div>
+                <div><div>Rendering Original Image</div>
+                  <div style="font-size:11px;color:var(--muted);">Displaying the decrypted medical image…</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Decrypted image result -->
+          <div id="dec-result" style="display:none;">
+            <div style="background:rgba(63,185,80,.08);border:1px solid var(--accent2);border-radius:8px;padding:12px;margin-bottom:12px;">
+            <div style="font-size:12px;color:var(--accent2);font-weight:700;margin-bottom:8px;">✅ Decryption Successful</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;">
+                <div><span style="color:var(--muted);">File Size:</span> <span id="dec-size" style="color:var(--accent);">—</span></div>
+                <div><span style="color:var(--muted);">Integrity:</span> <span id="dec-integrity" style="color:var(--accent2);">—</span></div>
+                <div><span style="color:var(--muted);">Gateway:</span> <span id="dec-gw-used" style="color:var(--accent);">—</span></div>
+                <div><span style="color:var(--muted);">Encryption:</span> <span style="color:var(--accent2);">AES-256-GCM ✓</span></div>
+              </div>
+            </div>
+
+            <!-- Decrypted image display -->
+            <div style="position:relative;border-radius:8px;overflow:hidden;background:#000;">
+              <img id="dec-img" src="" alt="Decrypted Medical Image"
+                style="width:100%;max-height:280px;object-fit:contain;display:block;" />
+              <div style="position:absolute;top:8px;left:8px;background:rgba(63,185,80,.85);
+                          color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;">
+                DECRYPTED ✓
+              </div>
+            </div>
+
+            <button onclick="downloadDecrypted()"
+              class="btn-primary"
+              style="background:linear-gradient(135deg,var(--accent2),var(--teal));margin-top:12px;">
+              💾 Download Decrypted Image
+            </button>
+          </div>
+
+          <!-- Error display -->
+          <div id="dec-error" style="display:none;background:rgba(248,81,73,.08);border:1px solid var(--danger);
+               border-radius:8px;padding:12px;font-size:13px;color:var(--danger);">
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Hidden canvas for processing -->
+<canvas id="work-canvas" style="display:none;"></canvas>
+
+<script>
+// ════════════════════════════════════════
+//  State
+// ════════════════════════════════════════
+let currentFile = null;
+let currentImageType = 'CT Scan';
+let pipelineResult = null;
+const history = [];
+
+// ════════════════════════════════════════
+//  UI helpers
+// ════════════════════════════════════════
+function toast(msg, type = 'info') {
+  const el = document.getElementById('toast');
+  el.className = 'show ' + type;
+  el.innerHTML = (type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️') + ' ' + msg;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.className = ''; }, 3500);
+}
+
+function setStepStatus(id, status) {
+  const el = document.getElementById('ps-' + id + '-s');
+  el.className = 'step-status ' + status;
+  el.textContent = status === 'done' ? '✓' : status === 'error' ? '✗' : status === 'running' ? '…' : el.textContent;
+}
+
+function setPipelineStep(idx) {
+  for (let i = 0; i < 4; i++) {
+    const el = document.getElementById('pstep-' + i);
+    el.className = 'pipe-step' + (i < idx ? ' done' : i === idx ? ' active' : '');
+  }
+}
+
+function setProgress(pct) {
+  document.getElementById('progress-bar').style.width = pct + '%';
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+}
+
+function copyEl(id) {
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(() => toast('Copied!', 'success'));
+}
+
+function copyKey() {
+  const text = document.getElementById('enc-key-val').textContent;
+  navigator.clipboard.writeText(text).then(() => toast('Key copied!', 'success'));
+}
+
+// ════════════════════════════════════════
+//  Image Type Selector
+// ════════════════════════════════════════
+function selectType(el) {
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  currentImageType = el.dataset.type;
+}
+
+// ════════════════════════════════════════
+//  Drag & Drop
+// ════════════════════════════════════════
+const dropZone = document.getElementById('drop-zone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) loadFile(file);
+});
+
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (file) loadFile(file);
+}
+
+function loadFile(file) {
+  currentFile = file;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const src = e.target.result;
+    const img = new Image();
+    img.onload = () => {
+      // Show preview
+      document.getElementById('preview-img').src = src;
+      document.getElementById('preview-wrap').style.display = 'block';
+
+      // File info
+      document.getElementById('fi-name').textContent = file.name;
+      document.getElementById('fi-size').textContent = formatBytes(file.size);
+      document.getElementById('fi-dims').textContent = img.width + ' × ' + img.height;
+      document.getElementById('fi-type').textContent = currentImageType;
+      document.getElementById('file-info').style.display = 'block';
+
+      // Enable button
+      document.getElementById('process-btn').disabled = false;
+      setPipelineStep(0);
+      toast('Image loaded: ' + file.name, 'success');
+
+      // Draw on work canvas
+      const wc = document.getElementById('work-canvas');
+      wc.width = img.width; wc.height = img.height;
+      wc.getContext('2d').drawImage(img, 0, 0);
+    };
+    img.src = src;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ════════════════════════════════════════
+//  Toggle resize & encryption UI
+// ════════════════════════════════════════
+document.getElementById('proc-resize').addEventListener('change', function () {
+  document.getElementById('resize-wrap').style.display = this.checked ? 'block' : 'none';
+});
+document.getElementById('kdf-select').addEventListener('change', function () {
+  document.getElementById('pwd-wrap').style.display = this.value === 'pbkdf2' ? 'block' : 'none';
+});
+function toggleEncryption(cb) {
+  document.getElementById('enc-options').style.opacity = cb.checked ? '1' : '0.4';
+  document.getElementById('enc-options').style.pointerEvents = cb.checked ? 'auto' : 'none';
+}
+
+// ════════════════════════════════════════
+//  PREPROCESSING (Canvas-based)
+// ════════════════════════════════════════
+function getImageData() {
+  const wc = document.getElementById('work-canvas');
+  return wc.getContext('2d').getImageData(0, 0, wc.width, wc.height);
+}
+
+function applyGrayscale(data) {
+  for (let i = 0; i < data.data.length; i += 4) {
+    const g = 0.299 * data.data[i] + 0.587 * data.data[i+1] + 0.114 * data.data[i+2];
+    data.data[i] = data.data[i+1] = data.data[i+2] = g;
+  }
+}
+
+function applyNoiseRemoval(data, w, h) {
+  // Simple 3×3 box blur (approximates Gaussian)
+  const src = new Uint8ClampedArray(data.data);
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      for (let c = 0; c < 3; c++) {
+        let sum = 0;
+        for (let dy = -1; dy <= 1; dy++)
+          for (let dx = -1; dx <= 1; dx++)
+            sum += src[((y + dy) * w + (x + dx)) * 4 + c];
+        data.data[(y * w + x) * 4 + c] = sum / 9;
+      }
+    }
+  }
+}
+
+function applyContrastEnhancement(data) {
+  // Simple histogram stretch
+  let min = 255, max = 0;
+  for (let i = 0; i < data.data.length; i += 4) {
+    for (let c = 0; c < 3; c++) {
+      const v = data.data[i + c];
+      if (v < min) min = v;
+      if (v > max) max = v;
+    }
+  }
+  const range = max - min || 1;
+  for (let i = 0; i < data.data.length; i += 4) {
+    for (let c = 0; c < 3; c++) {
+      data.data[i + c] = Math.round((data.data[i + c] - min) / range * 255);
+    }
+  }
+}
+
+function applyNormalize(data) {
+  // Already normalized via contrast stretch above, do gamma correction
+  for (let i = 0; i < data.data.length; i += 4) {
+    for (let c = 0; c < 3; c++) {
+      data.data[i + c] = Math.round(Math.pow(data.data[i + c] / 255, 0.9) * 255);
+    }
+  }
+}
+
+async function preprocessImage() {
+  const wc = document.getElementById('work-canvas');
+  const ctx = wc.getContext('2d');
+  const w = wc.width, h = wc.height;
+
+  // Target resize if enabled
+  if (document.getElementById('proc-resize').checked) {
+    const size = parseInt(document.getElementById('resize-range').value);
+    const tmpCanvas = document.createElement('canvas');
+    tmpCanvas.width = size; tmpCanvas.height = size;
+    tmpCanvas.getContext('2d').drawImage(wc, 0, 0, size, size);
+    wc.width = size; wc.height = size;
+    ctx.drawImage(tmpCanvas, 0, 0);
+  }
+
+  const imageData = ctx.getImageData(0, 0, wc.width, wc.height);
+
+  if (document.getElementById('proc-gray').checked) applyGrayscale(imageData);
+  if (document.getElementById('proc-noise').checked) applyNoiseRemoval(imageData, wc.width, wc.height);
+  if (document.getElementById('proc-contrast').checked) applyContrastEnhancement(imageData);
+  if (document.getElementById('proc-normalize').checked) applyNormalize(imageData);
+
+  ctx.putImageData(imageData, 0, 0);
+
+  // Show preview comparison
+  const origCanvas = document.getElementById('canvas-original');
+  const procCanvas = document.getElementById('canvas-processed');
+  const origImg = document.getElementById('preview-img');
+
+  // Draw original
+  const tmpOrig = new Image();
+  tmpOrig.src = origImg.src;
+  await new Promise(r => { tmpOrig.onload = r; tmpOrig.src = tmpOrig.src; });
+  origCanvas.width = tmpOrig.naturalWidth;
+  origCanvas.height = tmpOrig.naturalHeight;
+  origCanvas.getContext('2d').drawImage(tmpOrig, 0, 0);
+
+  // Draw processed
+  procCanvas.width = wc.width; procCanvas.height = wc.height;
+  procCanvas.getContext('2d').drawImage(wc, 0, 0);
+
+  document.getElementById('proc-previews').style.display = 'block';
+
+  return wc.toDataURL('image/png');
+}
+
+// ════════════════════════════════════════
+//  ENCRYPTION (Web Crypto API)
+// ════════════════════════════════════════
+async function encryptData(dataUrl) {
+  const encEnabled = document.getElementById('enc-toggle').checked;
+
+  // Convert data URL to Uint8Array
+  const binary = atob(dataUrl.split(',')[1]);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+
+  if (!encEnabled) {
+    return { encrypted: bytes, key: null, iv: null, encEnabled: false };
+  }
+
+  const kdfMode = document.getElementById('kdf-select').value;
+  let key;
+
+  if (kdfMode === 'pbkdf2') {
+    const password = document.getElementById('enc-password').value || 'default-passphrase';
+    const enc = new TextEncoder();
+    const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    key = await crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+      keyMaterial,
+      { name: 'AES-GCM', length: 256 },
+      true,
+      ['encrypt', 'decrypt']
+    );
+  } else {
+    key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
+  }
+
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, bytes);
+
+  // Export key for display
+  const rawKey = await crypto.subtle.exportKey('raw', key);
+  const keyHex = Array.from(new Uint8Array(rawKey)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+  return {
+    encrypted: new Uint8Array(encrypted),
+    key: keyHex,
+    iv: Array.from(iv).map(b => b.toString(16).padStart(2, '0')).join(''),
+    encEnabled: true
+  };
+}
+
+// ════════════════════════════════════════
+//  SHA-256 HASH
+// ════════════════════════════════════════
+async function sha256(data) {
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// ════════════════════════════════════════
+//  REAL IPFS UPLOAD
+//  Supports: Pinata, web3.storage, Local node
+// ════════════════════════════════════════
+
+function onProviderChange() {
+  const v = document.getElementById('ipfs-provider').value;
+  document.getElementById('wrap-pinata').style.display      = v === 'pinata'       ? 'block' : 'none';
+  document.getElementById('wrap-web3storage').style.display = v === 'web3storage'  ? 'block' : 'none';
+  document.getElementById('wrap-local').style.display       = v === 'local'        ? 'block' : 'none';
+}
+
+function showIpfsStatus(msg, type = 'info') {
+  const el = document.getElementById('ipfs-status-badge');
+  el.style.display = 'block';
+  const colors = { info: 'var(--accent)', success: 'var(--accent2)', error: 'var(--danger)', warn: 'var(--warn)' };
+  el.style.color = colors[type] || colors.info;
+  el.style.borderColor = colors[type] || colors.info;
+  el.textContent = msg;
+}
+
+// ── Pinata: https://docs.pinata.cloud/api-reference/endpoint/ipfs/pin-file-to-ipfs
+async function uploadViaPinata(blob, filename, metadata) {
+  const jwt = document.getElementById('pinata-jwt').value.trim();
+  if (!jwt) throw new Error('Pinata JWT missing!');
+
+  showIpfsStatus('📡 Connecting to Pinata IPFS…', 'info');
+
+  const form = new FormData();
+  form.append('file', blob, filename);
+
+  // Pinata metadata
+  const pinataMetadata = {
+    name: filename,
+    keyvalues: {
+      imageType:  metadata.imageType  || 'unknown',
+      sha256:     metadata.hash       || '',
+      timestamp:  metadata.timestamp  || new Date().toISOString(),
+      encrypted:  String(metadata.encrypted)
+    }
+  };
+  form.append('pinataMetadata', JSON.stringify(pinataMetadata));
+  form.append('pinataOptions',  JSON.stringify({ cidVersion: 1 }));
+
+  showIpfsStatus('⬆️ Uploading encrypted image to Pinata IPFS…', 'info');
+
+  let res;
+  try {
+    res = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
+      method:  'POST',
+      headers: { Authorization: 'Bearer ' + jwt },
+      body:    form
+    });
+  } catch (networkErr) {
+    throw new Error('Network error — check internet connection. ' + networkErr.message);
+  }
+
+  if (!res.ok) {
+    let errText = '';
+    try { errText = await res.text(); } catch(_) {}
+    if (res.status === 401) throw new Error('Pinata 401 Unauthorized — JWT expired or invalid.');
+    if (res.status === 403) throw new Error('Pinata 403 Forbidden — insufficient permissions.');
+    throw new Error('Pinata error ' + res.status + ': ' + errText);
+  }
+
+  const json = await res.json();
+  const cid  = json.IpfsHash;
+
+  // Also upload metadata JSON if checkbox is on
+  if (document.getElementById('ipfs-meta').checked) {
+    try {
+      const metaBlob = new Blob([JSON.stringify(metadata, null, 2)], { type: 'application/json' });
+      const metaForm = new FormData();
+      metaForm.append('file', metaBlob, filename.replace('.enc', '-metadata.json'));
+      metaForm.append('pinataMetadata', JSON.stringify({ name: filename + '-metadata' }));
+      metaForm.append('pinataOptions',  JSON.stringify({ cidVersion: 1 }));
+      await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
+        method:  'POST',
+        headers: { Authorization: 'Bearer ' + jwt },
+        body:    metaForm
+      });
+    } catch(_) { /* metadata upload failure is non-fatal */ }
+  }
+
+  showIpfsStatus('✅ Successfully pinned to IPFS via Pinata!', 'success');
+  return {
+    cid,
+    url: 'https://gateway.pinata.cloud/ipfs/' + cid
+  };
+}
+
+// ── web3.storage: https://web3.storage/docs/how-tos/store/
+async function uploadViaWeb3Storage(blob, filename, metadata) {
+  const token = document.getElementById('web3storage-token').value.trim();
+  if (!token) throw new Error('web3.storage token is required. Get one free at web3.storage/account/');
+
+  showIpfsStatus('📡 Connecting to web3.storage…', 'info');
+
+  const form = new FormData();
+  form.append('file', blob, filename);
+
+  showIpfsStatus('⬆️ Uploading to web3.storage…', 'info');
+
+  const res = await fetch('https://api.web3.storage/upload', {
+    method: 'POST',
+    headers: {
+      Authorization: 'Bearer ' + token,
+      'X-NAME': encodeURIComponent(filename)
+    },
+    body: blob
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error('web3.storage error ' + res.status + ': ' + err);
+  }
+
+  const json = await res.json();
+  const cid = json.cid;
+  showIpfsStatus('✅ Stored on web3.storage! CID: ' + cid.slice(0, 20) + '…', 'success');
+  return { cid, url: 'https://' + cid + '.ipfs.w3s.link' };
+}
+
+// ── Local IPFS node: http://localhost:5001/api/v0/add
+async function uploadViaLocalNode(blob, filename) {
+  showIpfsStatus('📡 Connecting to local IPFS node…', 'info');
+
+  const form = new FormData();
+  form.append('file', blob, filename);
+
+  const res = await fetch('http://localhost:5001/api/v0/add?cid-version=1&hash=sha2-256', {
+    method: 'POST',
+    body: form
+  });
+
+  if (!res.ok) {
+    throw new Error('Local IPFS node error ' + res.status + '. Is your daemon running? Run: ipfs daemon');
+  }
+
+  // Local node returns newline-delimited JSON
+  const text = await res.text();
+  const json = JSON.parse(text.trim().split('\n').pop());
+  const cid = json.Hash;
+  showIpfsStatus('✅ Added to local node! CID: ' + cid.slice(0, 20) + '…', 'success');
+  return { cid, url: 'http://localhost:8080/ipfs/' + cid };
+}
+
+// ── Main router ──
+async function uploadToIPFS(encryptedData, metadata) {
+  const provider = document.getElementById('ipfs-provider').value;
+  const filename = 'medimage-' + Date.now() + '.enc';
+
+  // Convert Uint8Array to Blob
+  const blob = new Blob([encryptedData], { type: 'application/octet-stream' });
+
+  let result;
+  switch (provider) {
+    case 'pinata':
+      result = await uploadViaPinata(blob, filename, metadata);
+      break;
+    case 'web3storage':
+      result = await uploadViaWeb3Storage(blob, filename, metadata);
+      break;
+    case 'local':
+      result = await uploadViaLocalNode(blob, filename);
+      break;
+    default:
+      throw new Error('Unknown provider: ' + provider);
+  }
+
+  return result;
+}
+
+// ════════════════════════════════════════
+//  QR CODE — using qrcode.js library
+// ════════════════════════════════════════
+function drawSimpleQR(text, containerId) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = ''; // clear previous
+  // QRCode library renders into the container div
+  new QRCode(container, {
+    text:         text,
+    width:        160,
+    height:       160,
+    colorDark:    '#0d1117',
+    colorLight:   '#ffffff',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+}
+
+// ════════════════════════════════════════
+//  MAIN PIPELINE
+// ════════════════════════════════════════
+async function startPipeline() {
+  if (!currentFile) return;
+
+  const btn = document.getElementById('process-btn');
+  btn.disabled = true;
+  document.getElementById('progress-section').style.display = 'block';
+  document.getElementById('result-section').style.display = 'none';
+  setProgress(0);
+
+  try {
+    // ── Step 1: Load ──
+    setPipelineStep(0);
+    setStepStatus('load', 'running');
+    await delay(400);
+    setStepStatus('load', 'done');
+    setProgress(20);
+
+    // ── Step 2: Preprocess ──
+    setPipelineStep(1);
+    setStepStatus('preprocess', 'running');
+    document.getElementById('ps-preprocess-detail').textContent = 'Applying filters…';
+    await delay(300);
+    const processedDataUrl = await preprocessImage();
+    setStepStatus('preprocess', 'done');
+    setProgress(45);
+
+    // ── Step 3: Encrypt ──
+    setPipelineStep(2);
+    setStepStatus('encrypt', 'running');
+    await delay(300);
+    const { encrypted, key, iv, encEnabled } = await encryptData(processedDataUrl);
+
+    if (encEnabled && key) {
+      document.getElementById('enc-key-val').textContent = key;
+      document.getElementById('iv-section').style.display = 'block';
+      document.getElementById('res-iv').textContent = iv;
+    }
+    setStepStatus('encrypt', 'done');
+    setProgress(65);
+
+    // ── Step 4: Hash ──
+    setPipelineStep(2);
+    setStepStatus('hash', 'running');
+    const hash = await sha256(encrypted);
+    await delay(200);
+    setStepStatus('hash', 'done');
+    setProgress(80);
+
+    // ── Step 5: IPFS ──
+    setPipelineStep(3);
+    setStepStatus('ipfs', 'running');
+    document.getElementById('ps-ipfs-detail').textContent = 'Uploading…';
+
+    const metadata = {
+      imageType: currentImageType,
+      filename: currentFile.name,
+      timestamp: new Date().toISOString(),
+      hash,
+      encrypted: encEnabled,
+      preprocessingSteps: {
+        noiseRemoval: document.getElementById('proc-noise').checked,
+        contrastEnhancement: document.getElementById('proc-contrast').checked,
+        normalization: document.getElementById('proc-normalize').checked,
+        resize: document.getElementById('proc-resize').checked,
+        grayscale: document.getElementById('proc-gray').checked,
+      }
+    };
+
+    const { cid, url } = await uploadToIPFS(encrypted, metadata);
+    setStepStatus('ipfs', 'done');
+    setProgress(100);
+
+    // ── Show Results ──
+    pipelineResult = { cid, url, hash, key, iv, encEnabled, metadata, encrypted, processedDataUrl };
+
+    document.getElementById('res-cid').textContent = cid;
+
+    // Single gateway link
+    document.getElementById('res-link-pinata').href = 'https://gateway.pinata.cloud/ipfs/' + cid;
+
+    document.getElementById('res-hash').textContent = hash;
+    document.getElementById('res-enc').textContent = encEnabled ? '🔒 AES-256-GCM' : '🔓 None';
+    document.getElementById('res-orig-size').textContent = formatBytes(currentFile.size);
+    document.getElementById('res-proc-size').textContent = formatBytes(encrypted.length);
+    document.getElementById('res-imgtype').textContent = currentImageType;
+    document.getElementById('res-ts').textContent = metadata.timestamp;
+
+    document.getElementById('result-section').style.display = 'block';
+
+    // QR — encode the full Pinata gateway URL
+    if (document.getElementById('gen-qr').checked) {
+      document.getElementById('qr-wrap').style.display = 'block';
+      drawSimpleQR('https://gateway.pinata.cloud/ipfs/' + cid, 'qr-canvas');
+    }
+
+    // History
+    addHistory({ cid, filename: currentFile.name, imgType: currentImageType, thumb: document.getElementById('preview-img').src });
+
+    toast('Upload complete! CID: ' + cid.slice(0, 16) + '…', 'success');
+    setPipelineStep(4); // all done
+
+    // Scroll to results
+    document.getElementById('result-section').scrollIntoView({ behavior: 'smooth' });
+
+  } catch (err) {
+    toast('Error: ' + err.message, 'error');
+    console.error(err);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ════════════════════════════════════════
+//  HISTORY
+// ════════════════════════════════════════
+function addHistory({ cid, filename, imgType, thumb }) {
+  history.unshift({ cid, filename, imgType, thumb, ts: new Date().toLocaleString() });
+  renderHistory();
+}
+
+function renderHistory() {
+  const section = document.getElementById('history-section');
+  const list = document.getElementById('history-list');
+  section.style.display = 'block';
+
+  list.innerHTML = history.map(item => `
+    <div class="history-row">
+      <img class="history-thumb" src="${item.thumb}" alt="" />
+      <div class="history-info">
+        <div class="history-name">${item.filename}</div>
+        <div class="history-cid">${item.cid}</div>
+        <div style="font-size:11px;color:var(--muted);">${item.ts}</div>
+      </div>
+      <span class="history-badge">${item.imgType}</span>
+    </div>
+  `).join('');
+}
+
+// ════════════════════════════════════════
+//  DOWNLOAD REPORT
+// ════════════════════════════════════════
+function downloadReport() {
+  if (!pipelineResult) return;
+  const report = {
+    cid: pipelineResult.cid,
+    ipfsUrl: pipelineResult.url,
+    sha256: pipelineResult.hash,
+    encryption: pipelineResult.encEnabled ? {
+      algorithm: 'AES-256-GCM',
+      iv: pipelineResult.iv,
+      keyHint: pipelineResult.key ? pipelineResult.key.slice(0, 8) + '...' : null
+    } : 'None',
+    metadata: pipelineResult.metadata,
+    blockchain: pipelineResult.blockchainTx || null
+  };
+  const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'medimage-report-' + Date.now() + '.json';
+  a.click();
+}
+</script>
+
+<!-- ══════════════════════════════════════
+     ethers.js v6 — MetaMask + Blockchain
+     ══════════════════════════════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<script>
+// ════════════════════════════════════════
+//  BLOCKCHAIN STATE
+// ════════════════════════════════════════
+let web3Provider   = null;   // ethers BrowserProvider (MetaMask)
+let web3Signer     = null;
+let contractConfig = null;   // from /api/config
+let medContract    = null;   // ethers Contract instance
+let walletAddress  = null;
+
+// ── Load contract config from server ──
+async function loadContractConfig() {
+  try {
+    const res = await fetch('/api/config');
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (_) { return null; }
+}
+
+// ── Wallet toggle handler ──
+async function onWalletToggle(checkbox) {
+  if (checkbox.checked) {
+    await connectWallet();
+    // If connect failed, uncheck toggle
+    if (!web3Signer) checkbox.checked = false;
+  } else {
+    disconnectWallet();
+  }
+}
+
+function disconnectWallet() {
+  web3Provider  = null;
+  web3Signer    = null;
+  walletAddress = null;
+  medContract   = null;
+
+  // Reset toggle UI
+  document.getElementById('wallet-dot').style.background        = 'var(--muted)';
+  document.getElementById('wallet-status-text').textContent     = 'Not Connected';
+  document.getElementById('wallet-status-text').style.color     = 'var(--muted)';
+  document.getElementById('wallet-toggle-track').style.background = '#f6851b';
+  document.getElementById('wallet-toggle-thumb').style.transform  = 'translateX(0)';
+
+  toast('Wallet disconnected', 'info');
+}
+
+// ── Connect MetaMask ──
+async function connectWallet() {
+  if (typeof window.ethereum === 'undefined') {
+    toast('MetaMask not found! Install MetaMask extension.', 'error');
+    return;
+  }
+
+  try {
+    // Request accounts
+    await window.ethereum.request({ method: 'eth_requestAccounts' });
+
+    web3Provider  = new ethers.BrowserProvider(window.ethereum);
+    web3Signer    = await web3Provider.getSigner();
+    walletAddress = await web3Signer.getAddress();
+    const network = await web3Provider.getNetwork();
+    const balance = await web3Provider.getBalance(walletAddress);
+
+    // Update UI — toggle style
+    document.getElementById('wallet-dot').style.background        = 'var(--accent2)';
+    document.getElementById('wallet-status-text').textContent     = `${walletAddress.slice(0,6)}…${walletAddress.slice(-4)}  |  ${parseFloat(ethers.formatEther(balance)).toFixed(4)} ETH`;
+    document.getElementById('wallet-status-text').style.color     = 'var(--accent2)';
+    document.getElementById('wallet-toggle').checked              = true;
+    document.getElementById('wallet-toggle-track').style.background = 'var(--accent2)';
+    document.getElementById('wallet-toggle-thumb').style.transform  = 'translateX(26px)';
+
+    // Load contract
+    contractConfig = await loadContractConfig();
+    if (contractConfig) {
+      medContract = new ethers.Contract(
+        contractConfig.contractAddress,
+        contractConfig.abi,
+        web3Signer
+      );
+      toast('Wallet + Smart Contract connected!', 'success');
+
+      // Show blockchain info in result if already uploaded
+      updateBlockchainWalletInfo(walletAddress, network);
+    } else {
+      toast('Wallet connected! Deploy contract first: node deploy.js', 'warn');
+    }
+
+    // Listen for account changes
+    window.ethereum.on('accountsChanged', () => location.reload());
+    window.ethereum.on('chainChanged',    () => location.reload());
+
+  } catch (err) {
+    toast('MetaMask connection failed: ' + err.message, 'error');
+  }
+}
+
+function updateBlockchainWalletInfo(address, network) {
+  const infoEl = document.getElementById('bc-wallet-info');
+  if (infoEl) {
+    infoEl.style.display = 'block';
+    document.getElementById('bc-wallet').textContent  = address;
+    document.getElementById('bc-network').textContent =
+      `Chain ID: ${network.chainId} (Ganache)`;
+  }
+}
+
+// ── Store CID on Blockchain ──
+async function storeOnBlockchain() {
+  if (!pipelineResult) {
+    toast('Pehle image process karo!', 'error');
+    return;
+  }
+
+  const btn    = document.getElementById('store-chain-btn');
+  const status = document.getElementById('bc-status');
+
+  btn.disabled = true;
+  status.style.display     = 'block';
+  status.style.color       = 'var(--warn)';
+  status.style.borderColor = 'var(--warn)';
+
+  try {
+    // ── Step 1: Load contract config ──
+    if (!contractConfig) {
+      contractConfig = await loadContractConfig();
+      if (!contractConfig) throw new Error('Contract not deployed. Run: node deploy.js in terminal');
+    }
+
+    // ── Step 2: Connect MetaMask if not connected ──
+    if (!web3Signer) {
+      status.textContent = '🦊 MetaMask connect ho raha hai...';
+      await connectWallet();
+      if (!web3Signer) throw new Error('MetaMask connect nahi hua');
+    }
+
+    // ── Step 3: Check MetaMask is on Ganache network ──
+    const network = await web3Provider.getNetwork();
+    const chainId = Number(network.chainId);
+    if (chainId !== contractConfig.chainId) {
+      status.textContent = '🔄 Ganache network pe switch kar raha hai...';
+      try {
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: '0x' + contractConfig.chainId.toString(16) }]
+        });
+      } catch (switchErr) {
+        // Network not added — add it
+        if (switchErr.code === 4902) {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId:         '0x' + contractConfig.chainId.toString(16),
+              chainName:       'Ganache Local',
+              nativeCurrency:  { name: 'ETH', symbol: 'ETH', decimals: 18 },
+              rpcUrls:         [contractConfig.rpcUrl]
+            }]
+          });
+        } else throw switchErr;
+      }
+      // Re-init signer after switch
+      web3Provider = new ethers.BrowserProvider(window.ethereum);
+      web3Signer   = await web3Provider.getSigner();
+    }
+
+    // ── Step 4: Build contract with MetaMask signer ──
+    const contract = new ethers.Contract(
+      contractConfig.contractAddress,
+      contractConfig.abi,
+      web3Signer
+    );
+
+    const { cid, hash, encEnabled, metadata } = pipelineResult;
+
+    status.textContent = '🦊 MetaMask mein transaction confirm karo...';
+
+    // ── Step 5: Send transaction via MetaMask ──
+    const tx = await contract.storeImage(
+      cid,
+      hash,
+      metadata.imageType || currentImageType,
+      metadata.filename  || (currentFile ? currentFile.name : 'unknown'),
+      encEnabled,
+      { gasLimit: 500000 }
+    );
+
+    status.textContent = '⛏️ Transaction mine ho raha hai Ganache pe...';
+    const receipt = await tx.wait();
+
+    // ── Step 6: Extract Record ID from event ──
+    let recordId = '0';
+    try {
+      for (const log of receipt.logs) {
+        try {
+          const parsed = contract.interface.parseLog(log);
+          if (parsed && parsed.name === 'ImageStored') {
+            recordId = parsed.args.recordId.toString();
+            break;
+          }
+        } catch (_) {}
+      }
+    } catch (_) {}
+
+    // ── Step 7: Show results ──
+    status.style.color       = 'var(--accent2)';
+    status.style.borderColor = 'var(--accent2)';
+    status.textContent       = '✅ MetaMask se Ganache blockchain pe store ho gaya!';
+
+    document.getElementById('bc-result').style.display  = 'block';
+    document.getElementById('bc-tx-hash').textContent   = receipt.hash;
+    document.getElementById('bc-record-id').textContent = '#' + recordId;
+    document.getElementById('bc-block').textContent     = receipt.blockNumber?.toString() || '—';
+    document.getElementById('bc-gas').textContent       = receipt.gasUsed?.toString()     || '—';
+    document.getElementById('bc-contract').textContent  = contractConfig.contractAddress;
+
+    // Update wallet balance display after tx
+    const bal = await web3Provider.getBalance(walletAddress);
+    document.getElementById('wallet-status-text').textContent =
+      `${walletAddress.slice(0,6)}…${walletAddress.slice(-4)}  |  ${parseFloat(ethers.formatEther(bal)).toFixed(4)} ETH`;
+
+    pipelineResult.blockchainTx = {
+      txHash:          receipt.hash,
+      blockNumber:     receipt.blockNumber,
+      recordId,
+      gasUsed:         receipt.gasUsed?.toString(),
+      contractAddress: contractConfig.contractAddress,
+      network:         'Ganache Local',
+      wallet:          walletAddress
+    };
+
+    toast('✅ Blockchain pe store ho gaya! Record #' + recordId, 'success');
+    document.getElementById('bc-result').scrollIntoView({ behavior: 'smooth' });
+
+  } catch (err) {
+    // User rejected MetaMask popup
+    if (err.code === 4001 || err.message?.includes('rejected')) {
+      status.style.color       = 'var(--warn)';
+      status.style.borderColor = 'var(--warn)';
+      status.textContent       = '⚠️ Transaction cancel kiya. Dobara try karo.';
+      toast('Transaction cancel kiya', 'warn');
+    } else {
+      status.style.color       = 'var(--danger)';
+      status.style.borderColor = 'var(--danger)';
+      status.textContent       = '❌ ' + (err.reason || err.message);
+      toast('Error: ' + (err.reason || err.message), 'error');
+      console.error(err);
+    }
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ── Auto-load config on page load ──
+window.addEventListener('load', async () => {
+  contractConfig = await loadContractConfig();
+  if (contractConfig) {
+    console.log('📄 Contract config loaded:', contractConfig.contractAddress);
+  }
+});
+
+// ── Show blockchain section after IPFS upload ──
+const _origStartPipeline = startPipeline;
+// Patch: show blockchain section when result is shown
+const _observer = new MutationObserver(() => {
+  const resultSection = document.getElementById('result-section');
+  const bcSection     = document.getElementById('blockchain-section');
+  if (resultSection && resultSection.style.display !== 'none') {
+    if (bcSection) bcSection.style.display = 'block';
+    if (web3Signer && contractConfig) {
+      web3Provider.getNetwork().then(n => updateBlockchainWalletInfo(walletAddress, n));
+    }
+  }
+});
+_observer.observe(document.getElementById('result-section'), { attributes: true, attributeFilter: ['style'] });
+
+</script>
+
+<script>
+// ════════════════════════════════════════
+//  STEP 7 — SECURE RETRIEVAL & DECRYPTION
+// ════════════════════════════════════════
+
+let decryptedBlob = null; // for download
+
+// ── Auto-fill from current pipeline result ──
+function autofillFromResult() {
+  if (!pipelineResult) {
+    toast('Please process an image first!', 'error');
+    return;
+  }
+  if (pipelineResult.cid)  document.getElementById('dec-cid').value = pipelineResult.cid;
+  if (pipelineResult.key)  document.getElementById('dec-key').value = pipelineResult.key;
+  if (pipelineResult.iv)   document.getElementById('dec-iv').value  = pipelineResult.iv;
+  toast('Fields filled from current session!', 'success');
+}
+
+// ── Set decryption step status ──
+function setDecStep(id, status) {
+  const el = document.getElementById('dps-' + id + '-s');
+  if (!el) return;
+  el.className = 'step-status ' + status;
+  el.textContent = status === 'done' ? '✓' : status === 'error' ? '✗' : status === 'running' ? '…' : el.textContent;
+}
+
+function setDecProgress(pct) {
+  const bar = document.getElementById('dec-bar');
+  if (bar) bar.style.width = pct + '%';
+}
+
+function setDecDetail(id, msg) {
+  const el = document.getElementById('dps-' + id + '-d');
+  if (el) el.textContent = msg;
+}
+
+// ── Main decryption pipeline ──
+async function startDecryption() {
+  const cid     = document.getElementById('dec-cid').value.trim();
+  const keyHex  = document.getElementById('dec-key').value.trim();
+  const ivHex   = document.getElementById('dec-iv').value.trim();
+  const expHash = pipelineResult?.hash || ''; // use from session if available
+  const gateway = document.getElementById('dec-gateway').value;
+
+  // Validate inputs
+  if (!cid) { toast('CID required!', 'error'); return; }
+  if (!keyHex || keyHex.length !== 64) { toast('AES key must be 64 hex chars (256-bit)!', 'error'); return; }
+  if (!ivHex  || ivHex.length  !== 24) { toast('IV must be 24 hex chars (12 bytes)!', 'error'); return; }
+
+  // Reset UI
+  document.getElementById('dec-progress').style.display = 'block';
+  document.getElementById('dec-result').style.display   = 'none';
+  document.getElementById('dec-error').style.display    = 'none';
+  decryptedBlob = null;
+  setDecProgress(0);
+  ['fetch','verify','decrypt','render'].forEach(s => setDecStep(s, 'pending'));
+
+  try {
+    // ── Step 1: Download from IPFS ──
+    setDecStep('fetch', 'running');
+    setDecDetail('fetch', 'Connecting to ' + gateway + '...');
+    setDecProgress(10);
+
+    const ipfsUrl = gateway + cid;
+    let encryptedBytes;
+
+    try {
+      const res = await fetch(ipfsUrl);
+      if (!res.ok) throw new Error('Gateway returned ' + res.status);
+      const arrayBuf = await res.arrayBuffer();
+      encryptedBytes = new Uint8Array(arrayBuf);
+      setDecDetail('fetch', `Downloaded ${formatBytes(encryptedBytes.length)} from IPFS`);
+    } catch (fetchErr) {
+      // Try fallback gateways
+      setDecDetail('fetch', 'Primary gateway failed, trying fallback...');
+      const fallbacks = [
+        'https://ipfs.io/ipfs/',
+        'https://cloudflare-ipfs.com/ipfs/',
+        'https://dweb.link/ipfs/',
+        'https://gateway.pinata.cloud/ipfs/'
+      ].filter(g => g !== gateway);
+
+      let downloaded = false;
+      for (const fb of fallbacks) {
+        try {
+          const res = await fetch(fb + cid);
+          if (res.ok) {
+            encryptedBytes = new Uint8Array(await res.arrayBuffer());
+            setDecDetail('fetch', `Downloaded via ${fb}`);
+            downloaded = true;
+            break;
+          }
+        } catch (_) {}
+      }
+      if (!downloaded) throw new Error('All IPFS gateways failed. CID: ' + cid);
+    }
+
+    setDecStep('fetch', 'done');
+    setDecProgress(35);
+
+    // ── Step 2: SHA-256 Integrity Verify ──
+    setDecStep('verify', 'running');
+    setDecProgress(50);
+
+    const computedHash = await sha256(encryptedBytes);
+
+    if (expHash && expHash.length === 64) {
+      if (computedHash.toLowerCase() === expHash.toLowerCase()) {
+        setDecDetail('verify', '✅ Hash matches — file is intact');
+        document.getElementById('dec-integrity').textContent = '✅ Verified';
+        document.getElementById('dec-integrity').style.color = 'var(--accent2)';
+      } else {
+        setDecDetail('verify', '⚠️ Hash mismatch — file may be tampered!');
+        document.getElementById('dec-integrity').textContent = '⚠️ MISMATCH';
+        document.getElementById('dec-integrity').style.color = 'var(--danger)';
+        // Don't throw — still attempt decrypt
+      }
+    } else {
+      setDecDetail('verify', 'Hash not provided — skipping verify');
+      document.getElementById('dec-integrity').textContent = '⏭️ Skipped';
+      document.getElementById('dec-integrity').style.color = 'var(--muted)';
+    }
+
+    setDecStep('verify', 'done');
+    setDecProgress(65);
+
+    // ── Step 3: AES-256-GCM Decryption ──
+    setDecStep('decrypt', 'running');
+    setDecProgress(75);
+
+    // Convert hex key & IV to Uint8Array
+    const keyBytes = new Uint8Array(keyHex.match(/.{1,2}/g).map(b => parseInt(b, 16)));
+    const ivBytes  = new Uint8Array(ivHex.match(/.{1,2}/g).map(b => parseInt(b, 16)));
+
+    // Import key
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw', keyBytes,
+      { name: 'AES-GCM' },
+      false,
+      ['decrypt']
+    );
+
+    // Decrypt
+    let decryptedBuffer;
+    try {
+      decryptedBuffer = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: ivBytes },
+        cryptoKey,
+        encryptedBytes
+      );
+    } catch (decErr) {
+      throw new Error('Decryption failed — wrong key or IV. ' + decErr.message);
+    }
+
+    setDecStep('decrypt', 'done');
+    setDecProgress(90);
+
+    // ── Step 4: Render Image ──
+    setDecStep('render', 'running');
+
+    // Decrypted bytes are a PNG/JPG data URL (from canvas.toDataURL)
+    const decBytes  = new Uint8Array(decryptedBuffer);
+    const decString = new TextDecoder().decode(decBytes);
+
+    let imgSrc;
+    if (decString.startsWith('data:image')) {
+      // It's a data URL directly
+      imgSrc = decString;
+      decryptedBlob = dataURLtoBlob(decString);
+    } else {
+      // Raw image bytes — create blob URL
+      const mime = detectMime(decBytes);
+      decryptedBlob = new Blob([decryptedBuffer], { type: mime });
+      imgSrc = URL.createObjectURL(decryptedBlob);
+    }
+
+    document.getElementById('dec-img').src = imgSrc;
+    document.getElementById('dec-size').textContent   = formatBytes(decryptedBuffer.byteLength);
+    document.getElementById('dec-gw-used').textContent = gateway.replace('https://','').split('/')[0];
+
+    setDecStep('render', 'done');
+    setDecProgress(100);
+
+    // Show result
+    document.getElementById('dec-result').style.display = 'block';
+    toast('🔓 Image decrypted successfully!', 'success');
+    document.getElementById('dec-result').scrollIntoView({ behavior: 'smooth' });
+
+  } catch (err) {
+    ['fetch','verify','decrypt','render'].forEach(s => {
+      const el = document.getElementById('dps-' + s + '-s');
+      if (el && el.classList.contains('running')) setDecStep(s, 'error');
+    });
+    document.getElementById('dec-error').style.display = 'block';
+    document.getElementById('dec-error').textContent   = '❌ ' + err.message;
+    toast('Decryption error: ' + err.message, 'error');
+    console.error(err);
+  }
+}
+
+// ── Download decrypted image ──
+function downloadDecrypted() {
+  if (!decryptedBlob) return;
+  const a = document.createElement('a');
+  a.href     = URL.createObjectURL(decryptedBlob);
+  a.download = 'decrypted-medimage-' + Date.now() + '.png';
+  a.click();
+}
+
+// ── Helpers ──
+function dataURLtoBlob(dataURL) {
+  const [header, data] = dataURL.split(',');
+  const mime = header.match(/:(.*?);/)[1];
+  const binary = atob(data);
+  const arr = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i);
+  return new Blob([arr], { type: mime });
+}
+
+function detectMime(bytes) {
+  // PNG magic: 89 50 4E 47
+  if (bytes[0] === 0x89 && bytes[1] === 0x50) return 'image/png';
+  // JPEG magic: FF D8 FF
+  if (bytes[0] === 0xFF && bytes[1] === 0xD8) return 'image/jpeg';
+  // BMP magic: 42 4D
+  if (bytes[0] === 0x42 && bytes[1] === 0x4D) return 'image/bmp';
+  return 'image/png'; // default
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IPFS Storage — MediVault</title>
+  <link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<div class="app-layout">
+  <div id="sidebar-container"></div>
+  <div class="main-content">
+
+    <div class="topbar">
+      <div class="breadcrumb">
+        <span>MediVault</span><span class="bc-sep">›</span><span class="bc-active">IPFS Storage</span>
+      </div>
+      <div class="topbar-right">
+        <div id="wallet-status-bar"></div>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <div class="page-header">
+        <h1 class="page-title">📦 Step 4 — IPFS Decentralized Storage</h1>
+        <p class="page-subtitle">Upload the encrypted medical image to IPFS for permanent, content-addressed decentralized storage.</p>
+      </div>
+
+      <!-- Pipeline indicator -->
+      <div class="pipeline-bar">
+        <div class="pipe-step done"><span class="p-icon">🏥</span><span class="p-label">1. Acquisition</span></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step done"><span class="p-icon">⚙️</span><span class="p-label">2. Preprocessing</span></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step done"><span class="p-icon">🔐</span><span class="p-label">3. Encryption</span></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step active"><span class="p-icon">📦</span><span class="p-label">4. IPFS Storage</span></div>
+      </div>
+
+      <!-- No data warning -->
+      <div id="no-data-warn" class="hidden">
+        <div class="card" style="text-align:center;padding:40px;">
+          <div style="font-size:48px;margin-bottom:12px;">⚠️</div>
+          <h3 style="margin-bottom:8px;color:var(--warning);">No Encrypted Data Found</h3>
+          <p class="text-muted mb-16">Please complete encryption before uploading to IPFS.</p>
+          <a href="encryption.html" class="btn btn-primary">← Go to Encryption</a>
+        </div>
+      </div>
+
+      <div id="main-wrap">
+        <div class="grid-2">
+          <!-- Left: Config -->
+          <div style="display:flex;flex-direction:column;gap:20px;">
+            <div class="card">
+              <div class="card-title" style="margin-bottom:16px;">🌐 IPFS Provider</div>
+
+              <div class="toggle-row">
+                <div class="toggle-row-label">
+                  <span class="label-main">Provider</span>
+                  <span class="label-desc">Select your IPFS pinning service</span>
+                </div>
+                <select id="ipfs-provider" onchange="onProviderChange()" style="width:auto;min-width:160px;padding:7px 10px;font-size:13px;">
+                  <option value="pinata">Pinata (JWT)</option>
+                  <option value="web3storage">web3.storage (token)</option>
+                  <option value="local">Local Node (localhost:5001)</option>
+                </select>
+              </div>
+
+              <!-- Pinata -->
+              <div id="wrap-pinata" style="margin-top:14px;">
+                <p style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">Enter your Pinata JWT to upload</p>
+                <input type="password" id="pinata-jwt" autocomplete="off" style="font-size:11px;">
+              </div>
+
+              <!-- web3.storage -->
+              <div id="wrap-web3storage" style="display:none;margin-top:14px;">
+                <p style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">
+                  web3.storage token —
+                  <a href="https://web3.storage/account/" target="_blank" style="color:var(--primary);">get free key ↗</a>
+                </p>
+                <input type="password" id="web3storage-token" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6…" autocomplete="off">
+              </div>
+
+              <!-- Local -->
+              <div id="wrap-local" style="display:none;margin-top:14px;">
+                <div class="card" style="background:#FFFBEB;border-color:#FDE68A;padding:12px;">
+                  <p style="font-size:12.5px;color:#92400E;">
+                    ⚠️ Requires a local IPFS daemon running at <code style="color:var(--primary);">localhost:5001</code>.
+                    Browser must be served over HTTP (not HTTPS) due to CORS.
+                  </p>
+                </div>
+              </div>
+
+              <div id="ipfs-status-badge" style="display:none;margin-top:12px;padding:8px 12px;border-radius:6px;font-size:12px;border:1px solid var(--border);"></div>
+            </div>
+
+            <div class="card">
+              <div class="card-title" style="margin-bottom:16px;">⚙️ Upload Options</div>
+
+              <div class="toggle-row">
+                <div class="toggle-row-label">
+                  <span class="label-main">Store Metadata JSON</span>
+                  <span class="label-desc">Also pin metadata as separate CID</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="ipfs-meta" checked>
+                  <span class="toggle-track"></span>
+                </label>
+              </div>
+
+              <div class="toggle-row">
+                <div class="toggle-row-label">
+                  <span class="label-main">Generate QR Code</span>
+                  <span class="label-desc">QR code for the IPFS CID</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="gen-qr" checked>
+                  <span class="toggle-track"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title" style="margin-bottom:12px;">📋 Upload Summary</div>
+              <div class="info-grid" style="grid-template-columns:1fr 1fr;">
+                <div class="info-item"><div class="i-label">Encrypted Size</div><div class="i-value primary" id="sum-size">—</div></div>
+                <div class="info-item"><div class="i-label">Modality</div><div class="i-value success" id="sum-type">—</div></div>
+                <div class="info-item"><div class="i-label">SHA-256</div><div class="i-value" style="font-size:10px;" id="sum-hash">—</div></div>
+                <div class="info-item"><div class="i-label">Encryption</div><div class="i-value success" id="sum-enc">—</div></div>
+              </div>
+
+              <button class="btn btn-primary btn-full" id="upload-btn" style="margin-top:16px;" onclick="startUpload()">
+                📦 Upload to IPFS
+              </button>
+
+              <div id="upload-progress" class="hidden" style="margin-top:14px;">
+                <div class="progress-wrap"><div class="progress-bar" id="upload-bar"></div></div>
+                <div class="step-list">
+                  <div class="step-item">
+                    <div class="step-num pending" id="us-connect-s">1</div>
+                    <div class="step-body">
+                      <div class="step-title">Connecting to Provider</div>
+                      <div class="step-desc" id="us-connect-d">Establishing connection…</div>
+                    </div>
+                  </div>
+                  <div class="step-item">
+                    <div class="step-num pending" id="us-upload-s">2</div>
+                    <div class="step-body">
+                      <div class="step-title">Uploading Encrypted File</div>
+                      <div class="step-desc" id="us-upload-d">Sending data to IPFS…</div>
+                    </div>
+                  </div>
+                  <div class="step-item">
+                    <div class="step-num pending" id="us-pin-s">3</div>
+                    <div class="step-body">
+                      <div class="step-title">Pinning &amp; Confirming</div>
+                      <div class="step-desc" id="us-pin-d">Waiting for IPFS confirmation…</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Results -->
+          <div style="display:flex;flex-direction:column;gap:20px;">
+            <div id="result-card" style="display:none;" class="card">
+              <div class="card-title" style="margin-bottom:4px;color:var(--success);">✅ Upload Successful</div>
+
+              <div class="cid-banner">
+                <div class="cid-title">IPFS Content Identifier (CID)</div>
+                <div class="cid-hash" id="res-cid">—</div>
+                <div class="cid-actions">
+                  <a href="#" id="res-link" class="btn btn-ghost btn-sm" target="_blank">🔗 Open on Gateway</a>
+                  <button class="btn btn-secondary btn-sm" onclick="copyToClipboard(document.getElementById('res-cid').textContent)">📋 Copy CID</button>
+                </div>
+              </div>
+
+              <!-- QR -->
+              <div id="qr-wrap" style="text-align:center;margin-top:14px;display:none;">
+                <p class="text-sm text-muted" style="margin-bottom:8px;">QR Code — scan to retrieve</p>
+                <div id="qr-canvas" style="display:inline-block;padding:12px;background:#fff;border-radius:10px;border:1px solid var(--border);"></div>
+              </div>
+
+              <div class="info-grid" style="grid-template-columns:1fr 1fr;margin-top:14px;">
+                <div class="info-item"><div class="i-label">Gateway</div><div class="i-value" id="res-gateway">—</div></div>
+                <div class="info-item"><div class="i-label">File Size</div><div class="i-value primary" id="res-size">—</div></div>
+              </div>
+
+              <div class="divider"></div>
+
+              <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <button class="btn btn-secondary" onclick="downloadDecryptionBundle()">🔐 Download Decryption Details</button>
+                <button class="btn btn-secondary" onclick="downloadReport()">📄 Download Report</button>
+                <a href="blockchain.html" class="btn btn-primary">Continue to Blockchain →</a>
+              </div>
+            </div>
+
+            <!-- History -->
+            <div class="card">
+              <div class="card-title" style="margin-bottom:14px;">🗂️ Upload History</div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr><th>File</th><th>Type</th><th>CID</th><th>Time</th></tr>
+                  </thead>
+                  <tbody id="history-body">
+                    <tr class="empty-row"><td colspan="4">No uploads yet</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="shared.js"></script>
+<script>
+  initSidebar('ipfs-storage');
+  MediVault.load();
+
+  // Check encrypted data exists
+  const hasData = !!(MediVault.encryptedData || sessionStorage.getItem('mv_encryptedDataB64'));
+  if (!hasData) {
+    document.getElementById('no-data-warn').classList.remove('hidden');
+    document.getElementById('main-wrap').style.display = 'none';
+  } else {
+    document.getElementById('sum-size').textContent = MediVault.encryptedData
+      ? formatBytes(MediVault.encryptedData.length) : '—';
+    document.getElementById('sum-type').textContent = MediVault.currentImageType || '—';
+    document.getElementById('sum-hash').textContent = MediVault.sha256Hash
+      ? MediVault.sha256Hash.slice(0,24) + '…' : '—';
+    document.getElementById('sum-enc').textContent  = MediVault.encryptionKey ? 'AES-256-GCM' : 'None';
+  }
+
+  // Show existing CID if already uploaded
+  if (MediVault.ipfsCID) {
+    showCIDResult(MediVault.ipfsCID, MediVault.ipfsUrl);
+  }
+
+  // Render history
+  renderHistory();
+
+  function renderHistory() {
+    const h = MediVault.history || [];
+    const tbody = document.getElementById('history-body');
+    if (!h.length) return;
+    tbody.innerHTML = h.map(item => `
+      <tr>
+        <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.filename||'—'}</td>
+        <td><span class="badge badge-info">${item.imgType||'—'}</span></td>
+        <td class="td-mono" style="font-size:10px;">${(item.cid||'').slice(0,18)}…</td>
+        <td class="td-muted">${item.ts ? new Date(item.ts).toLocaleTimeString() : '—'}</td>
+      </tr>
+    `).join('');
+  }
+
+  function showCIDResult(cid, url) {
+    document.getElementById('result-card').style.display = 'block';
+    document.getElementById('res-cid').textContent = cid;
+    document.getElementById('res-size').textContent = MediVault.encryptedData
+      ? formatBytes(MediVault.encryptedData.length) : '—';
+    const gwLabel = url ? url.replace('https://','').split('/')[0] : 'gateway.pinata.cloud';
+    document.getElementById('res-gateway').textContent = gwLabel;
+    const link = document.getElementById('res-link');
+    link.href = url || ('https://gateway.pinata.cloud/ipfs/' + cid);
+
+    if (document.getElementById('gen-qr').checked) {
+      document.getElementById('qr-wrap').style.display = 'block';
+      drawSimpleQR('https://gateway.pinata.cloud/ipfs/' + cid, 'qr-canvas');
+    }
+  }
+
+  function downloadDecryptionBundle() {
+    if (!MediVault.ipfsCID || !MediVault.encryptionKey || !MediVault.encryptionIV) {
+      toast('CID, AES key, and IV are required. Encrypt and upload the image first.', 'error');
+      return;
+    }
+
+    const bundle = {
+      cid: MediVault.ipfsCID,
+      ipfsUrl: MediVault.ipfsUrl,
+      encryption: {
+        algorithm: 'AES-256-GCM',
+        keyEncoding: 'hex',
+        key: MediVault.encryptionKey,
+        ivEncoding: 'hex',
+        iv: MediVault.encryptionIV,
+      },
+      sha256: MediVault.sha256Hash || null,
+      instructions: 'On MediVault Secure Retrieval, enter the CID, full key, and IV. Keep this file private and send it only to an authorized recipient using a secure channel.',
+    };
+
+    const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'medivault-decryption-details.json';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast('Decryption details downloaded. Keep them private.', 'success');
+  }
+
+  async function startUpload() {
+    const btn = document.getElementById('upload-btn');
+    btn.disabled = true;
+    document.getElementById('upload-progress').classList.remove('hidden');
+    document.getElementById('result-card').style.display = 'none';
+    setElProgress('upload-bar', 0);
+
+    try {
+      setStepStatus('us-connect-s', 'running');
+      setStepDesc('us-connect-d', 'Connecting to ' + document.getElementById('ipfs-provider').value + '…');
+      await delay(300);
+
+      let encData = MediVault.encryptedData;
+      if (!encData) {
+        const b64 = sessionStorage.getItem('mv_encryptedDataB64');
+        if (!b64) throw new Error('No encrypted data found. Please run encryption first.');
+        const bin = atob(b64);
+        encData = new Uint8Array(bin.length);
+        for (let i=0;i<bin.length;i++) encData[i]=bin.charCodeAt(i);
+      }
+
+      setStepStatus('us-connect-s', 'done');
+      setElProgress('upload-bar', 30);
+
+      setStepStatus('us-upload-s', 'running');
+      setStepDesc('us-upload-d', 'Uploading ' + formatBytes(encData.length) + ' to IPFS…');
+
+      const metadata = MediVault.metadata || {
+        imageType:  MediVault.currentImageType,
+        filename:   'medimage-' + Date.now(),
+        timestamp:  new Date().toISOString(),
+        hash:       MediVault.sha256Hash || '',
+        encrypted:  !!MediVault.encryptionKey,
+      };
+
+      const { cid, url } = await uploadToIPFS(encData, metadata);
+      setStepStatus('us-upload-s', 'done');
+      setElProgress('upload-bar', 75);
+
+      setStepStatus('us-pin-s', 'running');
+      setStepDesc('us-pin-d', 'Received CID: ' + cid.slice(0,20) + '…');
+      await delay(400);
+      setStepStatus('us-pin-s', 'done');
+      setElProgress('upload-bar', 100);
+
+      // Save state
+      MediVault.ipfsCID  = cid;
+      MediVault.ipfsUrl  = url;
+      MediVault.metadata = metadata;
+      MediVault.history  = MediVault.history || [];
+      MediVault.history.unshift({
+        cid,
+        filename: metadata.filename,
+        imgType:  metadata.imageType,
+        ts:       new Date().toISOString(),
+      });
+      MediVault.save();
+
+      showCIDResult(cid, url);
+      renderHistory();
+
+      addAuditLog('IPFS_UPLOAD', 'CID:' + cid + ' · ' + formatBytes(encData.length), 'success');
+      toast('Upload complete! CID: ' + cid.slice(0,18) + '…', 'success');
+      document.getElementById('result-card').scrollIntoView({ behavior: 'smooth' });
+
+    } catch(err) {
+      toast('Upload error: ' + err.message, 'error');
+      addAuditLog('IPFS_UPLOAD', err.message, 'error');
+      console.error(err);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+</script>
+</body>
+</html>

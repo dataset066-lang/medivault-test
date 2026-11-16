@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — MediVault</title>
+  <link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<div class="app-layout">
+  <div id="sidebar-container"></div>
+  <div class="main-content">
+
+    <div class="topbar">
+      <div class="breadcrumb">
+        <span>MediVault</span>
+        <span class="bc-sep">›</span>
+        <span class="bc-active">Dashboard</span>
+      </div>
+      <div class="topbar-right">
+        <div id="wallet-status-bar"></div>
+        <div class="wallet-toggle-wrap">
+          <span>Wallet</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="wallet-toggle" onchange="onWalletToggle(this)">
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <!-- Welcome Banner -->
+      <div class="welcome-banner">
+        <div>
+          <h2>🏥 Welcome to MediVault</h2>
+          <p>Secure, decentralized medical image storage powered by AES-256 encryption, IPFS, and Ethereum blockchain. Process, encrypt, and immutably record your medical images.</p>
+        </div>
+        <div class="welcome-actions">
+          <a href="acquisition.html" class="btn btn-primary">📤 Upload New Image</a>
+          <a href="retrieval.html"   class="btn btn-secondary">🔓 Retrieve Image</a>
+        </div>
+      </div>
+
+      <!-- Stat Cards -->
+      <div class="stat-grid" id="stat-grid">
+        <div class="stat-card primary">
+          <div class="stat-icon">🖼️</div>
+          <div class="stat-label">Images Processed</div>
+          <div class="stat-value" id="stat-processed">0</div>
+          <div class="stat-sub">Total pipeline runs</div>
+        </div>
+        <div class="stat-card success">
+          <div class="stat-icon">🔐</div>
+          <div class="stat-label">Encrypted Images</div>
+          <div class="stat-value" id="stat-encrypted">0</div>
+          <div class="stat-sub">AES-256-GCM secured</div>
+        </div>
+        <div class="stat-card warning">
+          <div class="stat-icon">📦</div>
+          <div class="stat-label">IPFS Files Stored</div>
+          <div class="stat-value" id="stat-ipfs">0</div>
+          <div class="stat-sub">Pinned on network</div>
+        </div>
+        <div class="stat-card purple">
+          <div class="stat-icon">⛓️</div>
+          <div class="stat-label">Blockchain TXs</div>
+          <div class="stat-value" id="stat-blockchain">0</div>
+          <div class="stat-sub">On-chain records</div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="card mb-24">
+        <div class="card-header">
+          <div class="card-title">⚡ Quick Actions</div>
+        </div>
+        <div class="quick-actions">
+          <a href="acquisition.html"     class="quick-action-btn"><span class="qa-icon">🏥</span>Acquire Image</a>
+          <a href="preprocessing.html"   class="quick-action-btn"><span class="qa-icon">⚙️</span>Preprocess</a>
+          <a href="encryption.html"      class="quick-action-btn"><span class="qa-icon">🔐</span>Encrypt</a>
+          <a href="ipfs-storage.html"    class="quick-action-btn"><span class="qa-icon">📦</span>IPFS Upload</a>
+          <a href="blockchain.html"      class="quick-action-btn"><span class="qa-icon">⛓️</span>Blockchain</a>
+          <a href="smart-contracts.html" class="quick-action-btn"><span class="qa-icon">📋</span>Smart Contracts</a>
+          <a href="retrieval.html"       class="quick-action-btn"><span class="qa-icon">🔓</span>Retrieve</a>
+          <a href="audit-logs.html"      class="quick-action-btn"><span class="qa-icon">📊</span>Audit Logs</a>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Connection Status -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🌐 System Connections</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div class="conn-card">
+              <div class="conn-card-icon">⛓️</div>
+              <div class="conn-card-info">
+                <div class="conn-card-name">Ganache Blockchain</div>
+                <div class="conn-card-detail" id="bc-conn-detail">Chain ID 1337 · localhost:7545</div>
+              </div>
+              <div class="conn-card-status">
+                <span class="badge badge-muted" id="bc-conn-badge">Offline</span>
+              </div>
+            </div>
+            <div class="conn-card">
+              <div class="conn-card-icon">📦</div>
+              <div class="conn-card-info">
+                <div class="conn-card-name">IPFS via Pinata</div>
+                <div class="conn-card-detail">api.pinata.cloud · JWT configured</div>
+              </div>
+              <div class="conn-card-status">
+                <span class="badge badge-success">Ready</span>
+              </div>
+            </div>
+            <div class="conn-card">
+              <div class="conn-card-icon">🔐</div>
+              <div class="conn-card-info">
+                <div class="conn-card-name">AES-256-GCM Encryption</div>
+                <div class="conn-card-detail">Web Crypto API · Browser-native</div>
+              </div>
+              <div class="conn-card-status">
+                <span class="badge badge-success">Active</span>
+              </div>
+            </div>
+            <div class="conn-card">
+              <div class="conn-card-icon">🦊</div>
+              <div class="conn-card-info">
+                <div class="conn-card-name">MetaMask Wallet</div>
+                <div class="conn-card-detail" id="wallet-conn-detail">Not connected</div>
+              </div>
+              <div class="conn-card-status">
+                <span class="badge badge-muted" id="wallet-conn-badge">Disconnected</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Current Session -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📋 Current Session State</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;" id="session-state">
+            <!-- filled by JS -->
+          </div>
+          <div style="margin-top:16px;">
+            <a href="acquisition.html" class="btn btn-primary btn-full">🚀 Start New Pipeline</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-20 grid-2">
+        <!-- Recent Activity -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📋 Recent Activity</div>
+            <a href="audit-logs.html" class="btn btn-secondary btn-sm">View All</a>
+          </div>
+          <div class="table-wrap">
+            <table id="activity-table">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Action</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="activity-body">
+                <tr class="empty-row"><td colspan="3">No recent activity</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Recent Uploads -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🗂️ Recent IPFS Uploads</div>
+            <a href="ipfs-storage.html" class="btn btn-secondary btn-sm">Upload</a>
+          </div>
+          <div class="table-wrap">
+            <table id="history-table">
+              <thead>
+                <tr>
+                  <th>File</th>
+                  <th>Type</th>
+                  <th>CID</th>
+                </tr>
+              </thead>
+              <tbody id="history-body">
+                <tr class="empty-row"><td colspan="3">No uploads yet</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /page-content -->
+  </div><!-- /main-content -->
+</div><!-- /app-layout -->
+
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<script src="shared.js"></script>
+<script>
+  initSidebar('dashboard');
+  MediVault.load();
+
+  function loadDashboard() {
+    const mv   = window.MediVault;
+    const logs = getAuditLogs();
+
+    // Stats
+    const ipfsCount  = mv.history ? mv.history.length : 0;
+    const bcCount    = logs.filter(l => l.action === 'BLOCKCHAIN_STORE' && l.status === 'success').length;
+    const encCount   = logs.filter(l => l.action === 'ENCRYPTION'       && l.status === 'success').length;
+    const procCount  = logs.filter(l => l.action === 'IMAGE_UPLOAD'      && l.status === 'success').length;
+
+    document.getElementById('stat-processed').textContent  = procCount;
+    document.getElementById('stat-encrypted').textContent  = encCount;
+    document.getElementById('stat-ipfs').textContent       = ipfsCount;
+    document.getElementById('stat-blockchain').textContent = bcCount;
+
+    // Session state
+    const sessionItems = [
+      { label: 'Image Type',      value: mv.currentImageType || '—',              done: !!mv.currentImageType },
+      { label: 'Preprocessed',    value: mv.preprocessedDataUrl ? 'Yes ✓' : 'No', done: !!mv.preprocessedDataUrl },
+      { label: 'AES Key',         value: mv.encryptionKey ? mv.encryptionKey.slice(0,16) + '…' : '—', done: !!mv.encryptionKey },
+      { label: 'SHA-256 Hash',    value: mv.sha256Hash ? mv.sha256Hash.slice(0,20) + '…' : '—', done: !!mv.sha256Hash },
+      { label: 'IPFS CID',        value: mv.ipfsCID ? mv.ipfsCID.slice(0,20) + '…' : '—', done: !!mv.ipfsCID },
+      { label: 'Blockchain TX',   value: mv.blockchainTx ? mv.blockchainTx.txHash.slice(0,18) + '…' : '—', done: !!mv.blockchainTx },
+    ];
+    document.getElementById('session-state').innerHTML = sessionItems.map(item => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);">
+        <span style="font-size:12.5px;color:var(--text-muted);">${item.label}</span>
+        <span style="font-size:12.5px;font-family:monospace;color:${item.done ? 'var(--success)' : 'var(--text-muted)'};">${item.value}</span>
+      </div>
+    `).join('');
+
+    // Recent activity
+    const recentLogs = logs.slice(0, 10);
+    const tbody = document.getElementById('activity-body');
+    if (recentLogs.length === 0) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="3">No recent activity</td></tr>';
+    } else {
+      tbody.innerHTML = recentLogs.map(log => {
+        const ts = new Date(log.ts).toLocaleTimeString();
+        const badge = log.status === 'success'
+          ? '<span class="badge badge-success">✓</span>'
+          : '<span class="badge badge-danger">✗</span>';
+        return `<tr>
+          <td class="td-muted">${ts}</td>
+          <td>${log.action}</td>
+          <td>${badge}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    // History
+    const history = mv.history || [];
+    const hbody = document.getElementById('history-body');
+    if (history.length === 0) {
+      hbody.innerHTML = '<tr class="empty-row"><td colspan="3">No uploads yet</td></tr>';
+    } else {
+      hbody.innerHTML = history.slice(0,5).map(h => `
+        <tr>
+          <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${h.filename || '—'}</td>
+          <td><span class="badge badge-info">${h.imgType || '—'}</span></td>
+          <td class="td-mono" style="font-size:11px;">${(h.cid||'').slice(0,18)}…</td>
+        </tr>
+      `).join('');
+    }
+
+    // Check contract config
+    loadContractConfig().then(cfg => {
+      const badge  = document.getElementById('bc-conn-badge');
+      const detail = document.getElementById('bc-conn-detail');
+      if (cfg) {
+        badge.className  = 'badge badge-success';
+        badge.textContent = 'Online';
+        detail.textContent = 'Chain ID ' + cfg.chainId + ' · ' + cfg.rpcUrl;
+      }
+    });
+  }
+
+  loadDashboard();
+</script>
+</body>
+</html>

@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secure Retrieval — MediVault</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .retrieval-center { max-width: 560px; margin: 0 auto; }
+
+    .decrypt-card {
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+      padding: 36px 32px;
+      box-shadow: var(--shadow-md);
+    }
+    .dc-title { font-size: 20px; font-weight: 700; color: var(--text); text-align: center; margin-bottom: 6px; }
+    .dc-sub   { font-size: 13px; color: var(--text-muted); text-align: center; margin-bottom: 28px; }
+
+    /* Wallet connect */
+    .wallet-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 20px;
+      background: #FAFAFA;
+      transition: all 0.2s;
+    }
+    .wallet-row.connected { border-color: #86EFAC; background: #F0FDF4; }
+    .wallet-row-icon { flex-shrink: 0; }
+    .wallet-row-text { flex: 1; font-size: 13px; color: var(--text-muted); }
+    .wallet-row.connected .wallet-row-text { color: #15803D; font-weight: 600; }
+    .wallet-row-text small { display: block; font-size: 11px; margin-top: 2px; font-family: monospace; }
+    .connect-btn {
+      padding: 9px 18px;
+      background: #F97316;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .connect-btn:hover { background: #EA580C; }
+    .connect-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .disconnect-btn {
+      padding: 6px 12px;
+      background: none;
+      color: #64748B;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    /* Field */
+    .field-wrap { margin-bottom: 20px; }
+    .field-label {
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.7px; color: var(--text-muted); margin-bottom: 8px;
+    }
+    .field-input {
+      width: 100%; padding: 13px 16px; font-size: 13px;
+      font-family: monospace; letter-spacing: 1px;
+      border: 1.5px solid var(--border); border-radius: 10px;
+      background: #F8FAFC; color: var(--text); outline: none; transition: all 0.2s;
+    }
+    .field-input:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px rgba(37,99,235,0.08); }
+    .field-hint { font-size: 11px; color: var(--text-muted); margin-top: 5px; }
+    .use-session {
+      font-size: 11px; color: var(--primary); cursor: pointer;
+      font-weight: 600; text-transform: none; letter-spacing: 0;
+    }
+    .use-session:hover { text-decoration: underline; }
+
+    /* Decrypt button */
+    .decrypt-btn {
+      width: 100%; padding: 16px;
+      background: linear-gradient(135deg, #2563EB, #7C3AED);
+      color: #fff; border: none; border-radius: 12px;
+      font-size: 15px; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      transition: all 0.2s;
+    }
+    .decrypt-btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+    .decrypt-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+    /* Status */
+    .status-msg {
+      display: none; padding: 10px 16px; border-radius: 8px;
+      font-size: 13px; margin-top: 14px; border: 1px solid var(--border);
+    }
+
+    /* Progress */
+    .progress-card {
+      display: none; background: #fff; border: 1.5px solid var(--border);
+      border-radius: 14px; padding: 24px; box-shadow: var(--shadow); margin-top: 20px;
+    }
+    .prog-bar-wrap { background: #F1F5F9; border-radius: 4px; height: 6px; overflow: hidden; margin: 10px 0 18px; }
+    .prog-bar { height: 100%; background: linear-gradient(90deg,#2563EB,#7C3AED); border-radius: 4px; width: 0%; transition: width 0.4s; }
+    .step-row { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid #F1F5F9; }
+    .step-row:last-child { border: none; }
+    .step-dot {
+      width: 26px; height: 26px; border-radius: 50%; border: 2px solid #E2E8F0;
+      background: #F8FAFC; color: #94A3B8; font-size: 11px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s;
+    }
+    .step-dot.running { border-color: #FCD34D; background: #FEF9C3; color: #92400E; animation: pulse 1s infinite; }
+    .step-dot.done    { border-color: #86EFAC; background: #DCFCE7; color: #15803D; }
+    .step-dot.error   { border-color: #FECACA; background: #FEE2E2; color: #DC2626; }
+    .step-title { font-size: 13px; font-weight: 600; color: var(--text); }
+    .step-desc  { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    /* Error */
+    .error-box {
+      display: none; background: #FEF2F2; border: 1.5px solid #FECACA;
+      border-radius: 12px; padding: 16px; color: #DC2626; font-size: 13px; margin-top: 16px;
+    }
+
+    /* Result */
+    .result-card {
+      display: none; background: #fff; border: 1.5px solid #86EFAC;
+      border-radius: 16px; padding: 28px; box-shadow: var(--shadow-md); margin-top: 20px;
+    }
+    .result-card.show { display: block; }
+    .result-title { display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 700; color: #15803D; margin-bottom: 14px; }
+    .result-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; margin-bottom: 14px; }
+    .result-meta .rl { color: var(--text-muted); }
+    .result-meta .rv { font-weight: 600; color: var(--text); }
+    .img-wrap { position: relative; border-radius: 10px; overflow: hidden; background: #000; margin-bottom: 14px; }
+    .img-wrap img { width: 100%; max-height: 360px; object-fit: contain; display: block; }
+    .dec-badge { position: absolute; top:10px; left:10px; background: rgba(22,163,74,0.9); color:#fff; font-size:11px; font-weight:700; padding:4px 12px; border-radius:999px; }
+    .download-btn {
+      width: 100%; padding: 13px; background: #16A34A; color: #fff; border: none;
+      border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s;
+    }
+    .download-btn:hover { background: #15803D; }
+
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+    @keyframes spin  { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <div id="sidebar-container"></div>
+  <div class="main-content">
+
+    <div class="topbar">
+      <div class="breadcrumb">
+        <span>MediVault</span><span class="bc-sep">›</span><span class="bc-active">Secure Retrieval</span>
+      </div>
+      <div class="topbar-right">
+        <div id="wallet-status-bar"></div>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <div class="page-header">
+        <h1 class="page-title">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+          Secure Image Retrieval
+        </h1>
+        <p class="page-subtitle">Retrieve with the CID, full AES-256 key, and IV. MetaMask is optional when you have the CID.</p>
+      </div>
+
+      <div class="retrieval-center">
+
+        <!-- ═══ MAIN CARD ═══ -->
+        <div class="decrypt-card">
+          <div class="dc-title">Decrypt Medical Image</div>
+          <div class="dc-sub">For another person's file, enter the CID, AES key, and IV they shared with you.</div>
+
+          <!-- Wallet Row -->
+          <div class="wallet-row" id="wallet-row">
+            <div class="wallet-row-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><circle cx="17" cy="12" r="1"/></svg>
+            </div>
+            <div class="wallet-row-text" id="wallet-row-text">
+              MetaMask is optional when you enter a CID below
+            </div>
+            <button class="connect-btn" id="connect-btn" onclick="doConnect()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><circle cx="17" cy="12" r="1"/></svg>
+              Connect
+            </button>
+          </div>
+
+          <div class="field-wrap">
+            <div class="field-label"><span>IPFS CID</span></div>
+            <input type="text" id="dec-cid" class="field-input"
+              placeholder="bafy... or Qm... (or an IPFS gateway URL)"
+              autocomplete="off" spellcheck="false">
+            <div class="field-hint">The sender must give you the CID of the encrypted file.</div>
+          </div>
+
+          <!-- AES Key Field -->
+          <div class="field-wrap">
+            <div class="field-label">
+              <span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                AES-256 Decryption Key
+              </span>
+              <span class="use-session" id="use-session-btn" onclick="useSessionKey()" style="display:none;">
+                Use session key
+              </span>
+            </div>
+            <input type="password"
+              id="dec-key"
+              class="field-input"
+              placeholder="64-character hex encryption key"
+              autocomplete="off" spellcheck="false"
+              onkeydown="if(event.key==='Enter') doDecrypt()">
+            <div class="field-hint">64 hex characters · Generated when image was encrypted</div>
+          </div>
+
+          <div class="field-wrap">
+            <div class="field-label"><span>Initialization Vector (IV)</span></div>
+            <input type="text" id="dec-iv" class="field-input"
+              placeholder="24-character hex IV"
+              autocomplete="off" spellcheck="false"
+              onkeydown="if(event.key==='Enter') doDecrypt()">
+            <div class="field-hint">12 bytes / 24 hex characters · Required with the key (unless embedded in the file).</div>
+          </div>
+
+          <!-- Status -->
+          <div class="status-msg" id="status-msg"></div>
+
+          <!-- Decrypt Button -->
+          <button class="decrypt-btn" id="decrypt-btn" onclick="doDecrypt()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+            Retrieve &amp; Decrypt
+          </button>
+        </div>
+
+        <!-- Progress -->
+        <div class="progress-card" id="progress-card">
+          <div class="step-title" style="font-size:14px;font-weight:700;color:var(--text);">Processing</div>
+          <div class="prog-bar-wrap"><div class="prog-bar" id="prog-bar"></div></div>
+          <div class="step-row"><div class="step-dot" id="st1">1</div><div><div class="step-title">Blockchain Lookup</div><div class="step-desc" id="st1-d">Fetching latest CID from smart contract</div></div></div>
+          <div class="step-row"><div class="step-dot" id="st2">2</div><div><div class="step-title">IPFS Download</div><div class="step-desc" id="st2-d">Downloading encrypted file</div></div></div>
+          <div class="step-row"><div class="step-dot" id="st3">3</div><div><div class="step-title">SHA-256 Integrity Check</div><div class="step-desc" id="st3-d">Verifying hash against blockchain</div></div></div>
+          <div class="step-row"><div class="step-dot" id="st4">4</div><div><div class="step-title">AES-256-GCM Decryption</div><div class="step-desc" id="st4-d">Decrypting with your key</div></div></div>
+          <div class="step-row"><div class="step-dot" id="st5">5</div><div><div class="step-title">Render Image</div><div class="step-desc" id="st5-d">Displaying original medical image</div></div></div>
+        </div>
+
+        <!-- Error -->
+        <div class="error-box" id="error-box"></div>
+
+        <!-- Result -->
+        <div class="result-card" id="result-card">
+          <div class="result-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Decryption Successful
+          </div>
+          <div class="result-meta">
+            <div><span class="rl">File Size </span><span class="rv" id="res-size">—</span></div>
+            <div><span class="rl">Integrity </span><span class="rv" id="res-integrity">—</span></div>
+            <div><span class="rl">Gateway </span><span class="rv" id="res-gw">—</span></div>
+            <div><span class="rl">Algorithm </span><span class="rv" style="color:#15803D;">AES-256-GCM ✓</span></div>
+          </div>
+          <div class="img-wrap">
+            <img id="dec-img" src="" alt="Decrypted Medical Image">
+            <div class="dec-badge">DECRYPTED ✓</div>
+          </div>
+          <button class="download-btn" onclick="doDownload()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download Decrypted Image
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<input type="hidden" id="dec-gateway" value="https://gateway.pinata.cloud/ipfs/">
+
+<div id="toast-container"></div>
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<script src="shared.js"></script>
+<script>
+initSidebar('retrieval');
+MediVault.load();
+if (MediVault.ipfsCID) document.getElementById('dec-cid').value = MediVault.ipfsCID;
+if (MediVault.encryptionIV) document.getElementById('dec-iv').value = MediVault.encryptionIV;
+
+// ── spin animation ──────────────────────────────────────────
+const _sty = document.createElement('style');
+_sty.textContent = '@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}';
+document.head.appendChild(_sty);
+
+let _blob = null;
+
+// ── UI helpers ──────────────────────────────────────────────
+function setStep(n, state, desc) {
+  const el = document.getElementById('st' + n);
+  if (!el) return;
+  el.className = 'step-dot ' + state;
+  el.textContent = state==='done' ? '✓' : state==='error' ? '✗' : state==='running' ? '…' : n;
+  if (desc) { const d = document.getElementById('st'+n+'-d'); if(d) d.textContent = desc; }
+}
+function setBar(pct) { const b = document.getElementById('prog-bar'); if(b) b.style.width = pct+'%'; }
+function showStatus(msg, type) {
+  const el = document.getElementById('status-msg');
+  el.style.display = 'block';
+  const c = {
+    info   : ['#EFF6FF','#1D4ED8','#BFDBFE'],
+    success: ['#F0FDF4','#15803D','#86EFAC'],
+    error  : ['#FEF2F2','#DC2626','#FECACA'],
+    warning: ['#FFFBEB','#92400E','#FDE68A'],
+  };
+  const s = c[type] || c.info;
+  el.style.background = s[0]; el.style.color = s[1]; el.style.border = '1px solid '+s[2];
+  el.textContent = msg;
+}
+function resetUI() {
+  document.getElementById('progress-card').style.display = 'none';
+  document.getElementById('result-card').classList.remove('show');
+  document.getElementById('error-box').style.display = 'none';
+  for(let i=1;i<=5;i++) setStep(i,'pending',null);
+  setBar(0);
+}
+
+// ── Connect MetaMask ────────────────────────────────────────
+async function doConnect() {
+  const btn = document.getElementById('connect-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Connecting...';
+
+  const ok = await connectWallet();
+
+  if (ok) {
+    const addr = window._mvChain.walletAddress;
+    document.getElementById('wallet-row').classList.add('connected');
+    document.getElementById('wallet-row-text').innerHTML =
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#15803D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>'+
+      ' Connected'+
+      '<small>' + addr.slice(0,10) + '…' + addr.slice(-6) + '</small>';
+    btn.innerHTML = 'Connected ✓';
+    btn.style.background = '#16A34A';
+
+    // Show session key hint if available
+    if (window.MediVault.encryptionKey) {
+      document.getElementById('use-session-btn').style.display = 'inline';
+    }
+    showStatus('Wallet connected — enter your AES key and click Decrypt', 'success');
+  } else {
+    btn.disabled = false;
+    btn.innerHTML = 'Connect';
+  }
+}
+
+function useSessionKey() {
+  // Try to get network-specific saved key first
+  const ch = window._mvChain;
+  let usedKey = null;
+
+  // Check saved keys by network
+  const nets = ['sepolia_testnet', 'ganache_local'];
+  for (const net of nets) {
+    try {
+      const saved = JSON.parse(localStorage.getItem('mv_key_' + net) || 'null');
+      if (saved && saved.key) {
+        usedKey = saved.key;
+        toast('Key loaded from ' + net.replace('_',' ') + ' session', 'success');
+        break;
+      }
+    } catch(_) {}
+  }
+
+  // Fallback to general session key
+  if (!usedKey) usedKey = window.MediVault.encryptionKey;
+
+  if (usedKey) {
+    document.getElementById('dec-key').value = usedKey;
+    if (window.MediVault.encryptionIV) document.getElementById('dec-iv').value = window.MediVault.encryptionIV;
+    if (window.MediVault.ipfsCID) document.getElementById('dec-cid').value = window.MediVault.ipfsCID;
+    toast('Session key, IV, and CID loaded when available', 'success');
+  } else {
+    toast('No saved key found', 'warning');
+  }
+}
+
+// ── MAIN DECRYPT ────────────────────────────────────────────
+async function doDecrypt() {
+  const keyHex = document.getElementById('dec-key').value.trim().replace(/^0x/i, '').replace(/\s+/g, '');
+  const ivInput = document.getElementById('dec-iv').value.trim().replace(/^0x/i, '').replace(/\s+/g, '');
+  const cidInput = document.getElementById('dec-cid').value.trim();
+  const savedIv = (window.MediVault.encryptionIV || '').replace(/^0x/i, '').replace(/\s+/g, '');
+  const ivHex = ivInput || savedIv;
+
+  // Validate key
+  if (!keyHex || keyHex.length !== 64) {
+    toast('Enter your 64-character AES-256 key', 'error');
+    document.getElementById('dec-key').focus();
+    return;
+  }
+  // Validate hex
+  if (!/^[0-9a-fA-F]{64}$/.test(keyHex)) {
+    toast('Key must be hexadecimal characters only (0-9, a-f)', 'error');
+    return;
+  }
+
+  if (ivInput && !/^[0-9a-fA-F]{24}$/.test(ivInput)) {
+    toast('IV must be 24 hexadecimal characters (12 bytes)', 'error');
+    document.getElementById('dec-iv').focus();
+    return;
+  }
+  if (!ivHex) {
+    toast('Enter the 24-character IV that was generated with this key.', 'error');
+    document.getElementById('dec-iv').focus();
+    return;
+  }
+  if (!/^[0-9a-fA-F]{24}$/.test(ivHex)) {
+    toast('Saved IV is invalid. Enter the correct 24-character IV.', 'error');
+    document.getElementById('dec-iv').focus();
+    return;
+  }
+  if (!cidInput && !window.MediVault.ipfsCID && !window._mvChain?.walletAddress) {
+    toast('Enter the IPFS CID, or connect the uploader wallet to find its latest record.', 'error');
+    document.getElementById('dec-cid').focus();
+    return;
+  }
+
+  const btn = document.getElementById('decrypt-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Processing...';
+
+  resetUI();
+  document.getElementById('progress-card').style.display = 'block';
+  showStatus('Starting...', 'info');
+
+  try {
+    // ── STEP 1: Resolve the encrypted file ────────────────────
+    let cid = cidInput || window.MediVault.ipfsCID || '';
+    let directUrl = '';
+    if (/^https?:\/\//i.test(cid)) {
+      directUrl = cid;
+      try {
+        const parsedUrl = new URL(cid);
+        const ipfsPath = parsedUrl.pathname.match(/\/ipfs\/(.+)$/i);
+        if (!ipfsPath) throw new Error('URL must contain /ipfs/<CID>.');
+        cid = decodeURIComponent(ipfsPath[1]).replace(/\/+$/, '');
+      } catch(urlErr) {
+        throw new Error('Invalid IPFS URL. Paste a CID or a gateway URL ending in /ipfs/<CID>.');
+      }
+    }
+    let sha256bc = (!cidInput || cidInput === window.MediVault.ipfsCID)
+      ? (window.MediVault.sha256Hash || '') : '';
+    let imageType = window.MediVault.currentImageType || '';
+
+    if (!cid && window._mvChain?.walletAddress) {
+      setStep(1, 'running', 'Loading your latest record from blockchain...');
+      setBar(10);
+      const cfg = await loadContractConfig();
+      if (!cfg || !cfg.contractAddress) throw new Error('Contract not configured. Enter the IPFS CID or run: node deploy.js');
+
+      const provider = new ethers.JsonRpcProvider(cfg.rpcUrl);
+      const contract = new ethers.Contract(cfg.contractAddress, cfg.abi, window._mvChain.signer || provider);
+      const ids = await contract.getMyRecords();
+      if (!ids || ids.length === 0) throw new Error('No records found for this wallet. Enter the IPFS CID shared by the uploader.');
+
+      const latestId = Number(ids[ids.length - 1]);
+      const record = await contract.getRecord(latestId);
+      cid = record[0];
+      sha256bc = record[1];
+      imageType = record[2];
+      setStep(1, 'done', 'Record #' + latestId + ' — CID: ' + cid.slice(0,20) + '...');
+    } else {
+      setStep(1, 'done', 'Using provided IPFS CID');
+      setBar(22);
+    }
+
+    setBar(22);
+
+    // ── STEP 2: IPFS Download ───────────────────────────────
+    setStep(2, 'running', 'Connecting to IPFS...');
+    showStatus('Downloading from IPFS...', 'info');
+
+    const gateways = [
+      'https://gateway.pinata.cloud/ipfs/',
+      'https://ipfs.io/ipfs/',
+      'https://cloudflare-ipfs.com/ipfs/',
+      'https://dweb.link/ipfs/',
+    ];
+
+    let encBytes = null, usedGw = '';
+    if (directUrl) {
+      try {
+        const directResponse = await fetch(directUrl, { signal: AbortSignal.timeout(15000) });
+        if (directResponse.ok) {
+          encBytes = new Uint8Array(await directResponse.arrayBuffer());
+          usedGw = new URL(directUrl).hostname;
+        }
+      } catch(_) {}
+    }
+    for (const gw of gateways) {
+      if (encBytes) break;
+      try {
+        setStep(2, 'running', 'Trying ' + gw.replace('https://','').split('/')[0] + '...');
+        const r = await fetch(gw + cid, { signal: AbortSignal.timeout(15000) });
+        if (r.ok) {
+          encBytes = new Uint8Array(await r.arrayBuffer());
+          usedGw   = gw.replace('https://','').split('/')[0];
+          break;
+        }
+      } catch(_) {}
+    }
+    if (!encBytes) throw new Error('All IPFS gateways failed. Check your internet connection.');
+    setStep(2, 'done', 'Downloaded ' + formatBytes(encBytes.length) + ' from ' + usedGw);
+    setBar(48);
+
+    // ── STEP 3: SHA-256 Integrity ───────────────────────────
+    setStep(3, 'running', 'Computing hash...');
+    const computedHash = await sha256(encBytes);
+    let integrityText;
+    if (sha256bc && sha256bc.length === 64) {
+      if (computedHash.toLowerCase() === sha256bc.toLowerCase()) {
+        setStep(3, 'done', 'Hash verified — file intact ✓');
+        integrityText = 'Verified ✓';
+        document.getElementById('res-integrity').style.color = '#15803D';
+      } else {
+        setStep(3, 'done', 'Hash mismatch — file may be tampered');
+        integrityText = 'Mismatch ⚠';
+        document.getElementById('res-integrity').style.color = '#DC2626';
+      }
+    } else {
+      setStep(3, 'done', 'No stored hash — skipped');
+      integrityText = 'Skipped';
+    }
+    document.getElementById('res-integrity').textContent = integrityText;
+    setBar(65);
+
+    // ── STEP 4: AES-256-GCM Decrypt ────────────────────────
+    setStep(4, 'running', 'Decrypting...');
+    showStatus('Decrypting...', 'info');
+
+    // MediVault stores the GCM ciphertext and IV separately. Use the full
+    // downloaded ciphertext; do not strip 12 bytes from the encrypted file.
+    const iv       = new Uint8Array(ivHex.match(/.{2}/g).map(b => parseInt(b,16)));
+    const encBody  = encBytes;
+    const keyBytes = new Uint8Array(keyHex.match(/.{1,2}/g).map(b => parseInt(b,16)));
+
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw', keyBytes, { name: 'AES-GCM' }, false, ['decrypt']
+    );
+    let decBuf;
+    try {
+      decBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, cryptoKey, encBody);
+    } catch(e) {
+      throw new Error('AES-GCM authentication failed. Check that the CID, full 64-character key, and matching 24-character IV all belong to the same upload.');
+    }
+    setStep(4, 'done', 'Decrypted ' + formatBytes(decBuf.byteLength));
+    setBar(85);
+
+    // ── STEP 5: Render ──────────────────────────────────────
+    setStep(5, 'running', 'Rendering image...');
+    const decBytes  = new Uint8Array(decBuf);
+    const decString = new TextDecoder().decode(decBytes);
+    let imgSrc;
+    if (decString.startsWith('data:image')) {
+      imgSrc = decString;
+      _blob  = dataURLtoBlob(decString);
+    } else {
+      const mime = detectMime(decBytes);
+      _blob  = new Blob([decBuf], { type: mime });
+      imgSrc = URL.createObjectURL(_blob);
+    }
+    document.getElementById('dec-img').src              = imgSrc;
+    document.getElementById('res-size').textContent     = formatBytes(decBuf.byteLength);
+    document.getElementById('res-gw').textContent       = usedGw;
+    setStep(5, 'done', 'Image rendered');
+    setBar(100);
+
+    // Show result
+    document.getElementById('result-card').classList.add('show');
+    document.getElementById('result-card').scrollIntoView({ behavior:'smooth', block:'nearest' });
+    showStatus('Decryption successful!', 'success');
+    toast('Image decrypted successfully!', 'success');
+
+    addAuditLog('IMAGE_DECRYPT', 'CID:' + cid.slice(0,20) + ' Type:' + (imageType||'—'), 'success');
+
+  } catch(err) {
+    for(let i=1;i<=5;i++) {
+      if(document.getElementById('st'+i)?.className.includes('running')) setStep(i,'error');
+    }
+    document.getElementById('error-box').style.display = 'block';
+    document.getElementById('error-box').innerHTML = '<strong>Error:</strong> ' + err.message;
+    showStatus('Failed: ' + err.message, 'error');
+    toast('Error: ' + err.message, 'error');
+    console.error('[doDecrypt]', err);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg> Retrieve &amp; Decrypt';
+  }
+}
+
+// ── Download ────────────────────────────────────────────────
+function doDownload() {
+  if (!_blob) return;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(_blob);
+  a.download = 'medivault-decrypted-' + Date.now() + '.png';
+  a.click();
+}
+
+// ── Init: show session key hint + saved network keys ─────────
+(function initKeyHints() {
+  // Check all saved network keys
+  const networks = ['ganache_local', 'sepolia_testnet'];
+  const savedKeys = [];
+  for (const net of networks) {
+    try {
+      const saved = JSON.parse(localStorage.getItem('mv_key_' + net) || 'null');
+      if (saved && saved.key) savedKeys.push({ ...saved, netLabel: net.replace('_',' ') });
+    } catch(_) {}
+  }
+
+  if (window.MediVault.encryptionKey || savedKeys.length > 0) {
+    document.getElementById('use-session-btn').style.display = 'inline';
+  }
+
+  // Show saved keys hint if any
+  if (savedKeys.length > 0) {
+    const hint = document.createElement('div');
+    hint.style.cssText = 'margin-top:10px;font-size:11px;color:var(--text-muted);';
+    hint.innerHTML = '<strong style="color:var(--text);">Saved keys:</strong> ' +
+      savedKeys.map(s =>
+        `<span onclick="useSavedKey('${s.key}')" style="cursor:pointer;color:var(--primary);margin-left:8px;text-decoration:underline;">
+          ${s.netLabel} (${new Date(s.ts).toLocaleDateString()})
+        </span>`
+      ).join('');
+    document.getElementById('dec-key').parentNode.appendChild(hint);
+  }
+})();
+
+function useSavedKey(key) {
+  document.getElementById('dec-key').value = key;
+  toast('Key filled from saved records', 'success');
+}
+</script>
+</body>
+</html>

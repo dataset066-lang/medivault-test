@@ -1,0 +1,377 @@
+╔══════════════════════════════════════════════════════════════════╗
+║         MedChain — Automated Evaluation Report                  ║
+║         Generated: 2026-11-14T06:21:43.035Z                  ║
+╚══════════════════════════════════════════════════════════════════╝
+
+  Contract : 0x482091b73484C94F7cC2Db30fA8Fa8c30801FE41
+  Wallet   : 0x4f6240a234b7906e824d2D566FefC8cFe5b60778
+  Network  : Ganache (chainId 1337)
+
+  Images loaded → crypto/integrity: 50  |  IPFS+blockchain: 10
+
+╔══════════════════════════════════════════════════════════════╗
+║  TABLE 1 — Cryptographic Performance Evaluation              ║
+╚══════════════════════════════════════════════════════════════╝
+  Objective: AES-256-GCM encryption/decryption on 50 real images
+
+  No | Category   | File                        | KB     | Enc(ms)  | Dec(ms)  | HashG(ms)| HashV(ms)
+  --------------------------------------------------------------------------------------------------
+    1 | glioma     | brisc2025_test_00001_gl_ax_ |  25.22 |   0.3920 |   0.1019 |   0.3344 |   0.0622
+    2 | glioma     | brisc2025_test_00002_gl_ax_ |  20.49 |   0.0459 |   0.0439 |   0.0192 |   0.0256
+    3 | glioma     | brisc2025_test_00003_gl_ax_ |  12.97 |   0.0512 |   0.0388 |   0.0167 |   0.0103
+    4 | glioma     | brisc2025_test_00004_gl_ax_ |  25.52 |   0.0612 |   0.0419 |   0.0205 |   0.0158
+    5 | glioma     | brisc2025_test_00005_gl_ax_ |  21.20 |   0.0639 |   0.0458 |   0.0268 |   0.0222
+    6 | glioma     | brisc2025_test_00006_gl_ax_ |  17.81 |   0.0693 |   0.0405 |   0.0228 |   0.0157
+    7 | glioma     | brisc2025_test_00007_gl_ax_ |  21.74 |   0.0588 |   0.0432 |   0.0258 |   0.0175
+    8 | glioma     | brisc2025_test_00008_gl_ax_ |  20.08 |   0.0529 |   0.0430 |   0.0254 |   0.0179
+    9 | glioma     | brisc2025_test_00009_gl_ax_ |  20.33 |   0.0699 |   0.0554 |   0.0294 |   0.0138
+   10 | glioma     | brisc2025_test_00010_gl_ax_ |  22.01 |   0.0677 |   0.0389 |   0.0184 |   0.0148
+   11 | meningioma | brisc2025_test_00255_me_ax_ |  21.50 |   0.0613 |   0.0342 |   0.0189 |   0.0192
+   12 | meningioma | brisc2025_test_00256_me_ax_ |  11.71 |   0.0362 |   0.0231 |   0.0178 |   0.0090
+   13 | meningioma | brisc2025_test_00257_me_ax_ |  41.12 |   0.0674 |   0.0514 |   0.0280 |   0.0231
+   14 | meningioma | brisc2025_test_00258_me_ax_ |  26.34 |   0.0544 |   0.0390 |   0.0229 |   0.0191
+   15 | meningioma | brisc2025_test_00259_me_ax_ |  16.10 |   0.0438 |   0.0381 |   0.0157 |   0.0108
+   16 | meningioma | brisc2025_test_00260_me_ax_ |  12.84 |   0.0433 |   0.0238 |   0.0138 |   0.0089
+   17 | meningioma | brisc2025_test_00261_me_ax_ |  33.38 |   0.0594 |   0.0478 |   0.0233 |   0.0193
+   18 | meningioma | brisc2025_test_00262_me_ax_ |  36.59 |   0.0609 |   0.0481 |   0.0253 |   0.0227
+   19 | meningioma | brisc2025_test_00263_me_ax_ |  12.09 |   0.0326 |   0.0225 |   0.0136 |   0.0086
+   20 | meningioma | brisc2025_test_00264_me_ax_ |  50.22 |   0.0864 |   0.0630 |   0.0337 |   0.0282
+   21 | no_tumor   | brisc2025_test_00561_no_ax_ |   9.48 |   0.0377 |   0.0193 |   0.0132 |   0.0078
+   22 | no_tumor   | brisc2025_test_00562_no_ax_ |   8.79 |   0.0306 |   0.0216 |   0.0139 |   0.0070
+   23 | no_tumor   | brisc2025_test_00563_no_ax_ |  10.01 |   0.0327 |   0.0227 |   0.0121 |   0.0082
+   24 | no_tumor   | brisc2025_test_00564_no_ax_ |  10.86 |   0.0292 |   0.0245 |   0.0121 |   0.0077
+   25 | no_tumor   | brisc2025_test_00565_no_ax_ |   9.84 |   0.0323 |   0.0190 |   0.0113 |   0.0072
+   26 | no_tumor   | brisc2025_test_00566_no_ax_ |   9.85 |   0.0366 |   0.0194 |   0.0127 |   0.0077
+   27 | no_tumor   | brisc2025_test_00567_no_ax_ |  10.21 |   0.0296 |   0.0183 |   0.0119 |   0.0077
+   28 | no_tumor   | brisc2025_test_00568_no_ax_ |  10.61 |   0.0343 |   0.0207 |   0.0123 |   0.0078
+   29 | no_tumor   | brisc2025_test_00569_no_ax_ |   9.63 |   0.0300 |   0.0279 |   0.0144 |   0.0092
+   30 | no_tumor   | brisc2025_test_00570_no_ax_ |   8.93 |   0.0389 |   0.0225 |   0.0158 |   0.0085
+   31 | pituitary  | brisc2025_test_00701_pi_ax_ |  30.46 |   0.0619 |   0.0480 |   0.0272 |   0.0243
+   32 | pituitary  | brisc2025_test_00702_pi_ax_ |  27.84 |   0.0606 |   0.0444 |   0.0282 |   0.0238
+   33 | pituitary  | brisc2025_test_00703_pi_ax_ |  27.21 |   0.0589 |   0.0755 |   0.0245 |   0.0168
+   34 | pituitary  | brisc2025_test_00704_pi_ax_ |  32.62 |   0.0498 |   0.0434 |   0.0233 |   0.0188
+   35 | pituitary  | brisc2025_test_00705_pi_ax_ |  24.59 |   0.0446 |   0.0339 |   0.0208 |   0.0149
+   36 | pituitary  | brisc2025_test_00706_pi_ax_ |  23.83 |   0.0478 |   0.0327 |   0.0184 |   0.0141
+   37 | pituitary  | brisc2025_test_00707_pi_ax_ |  30.63 |   0.0545 |   0.0400 |   0.0219 |   0.0175
+   38 | pituitary  | brisc2025_test_00708_pi_ax_ |  30.67 |   0.0508 |   0.0380 |   0.0217 |   0.0175
+   39 | pituitary  | brisc2025_test_00709_pi_ax_ |  25.98 |   0.0463 |   0.0345 |   0.0194 |   0.0155
+   40 | pituitary  | brisc2025_test_00710_pi_ax_ |  27.94 |   0.0485 |   0.0363 |   0.0203 |   0.0163
+   41 | xray_real  | xray_001.png                | 436.51 |   0.3661 |   0.3488 |   0.2241 |   0.2171
+   42 | xray_real  | xray_002.png                | 402.05 |   0.4079 |   0.4546 |   0.2244 |   0.2009
+   43 | xray_real  | xray_003.png                | 404.82 |   0.4860 |   0.4006 |   0.2137 |   0.2053
+   44 | xray_real  | xray_004.png                | 383.12 |   0.4652 |   0.4001 |   0.2031 |   0.1942
+   45 | xray_real  | xray_005.png                | 383.78 |   0.4464 |   0.4673 |   0.2091 |   0.2032
+   46 | xray_real  | xray_006.png                | 374.22 |   0.5278 |   0.6291 |   0.2392 |   0.2433
+   47 | xray_real  | xray_007.png                | 392.90 |   0.4328 |   0.3986 |   0.2198 |   0.2058
+   48 | xray_real  | xray_008.png                | 438.83 |   0.4050 |   0.3689 |   0.2291 |   0.2226
+   49 | xray_real  | xray_009.png                | 384.69 |   0.4499 |   0.3398 |   0.2228 |   0.1952
+   50 | xray_real  | xray_010.png                | 358.60 |   0.4138 |   0.4468 |   0.2338 |   0.1960
+  --------------------------------------------------------------------------------------------------
+  RESULTS:
+    1. Encryption Time                      : 0.1347 ms  (min: 0.0292 ms, max: 0.5278 ms)
+    2. Decryption Time                      : 0.1156 ms  (min: 0.0183 ms, max: 0.6291 ms)
+    3. Encryption Throughput                : 492.50 MB/s  
+    4. Decryption Throughput                : 625.09 MB/s  
+    5. SHA-256 Generation Time              : 0.0665 ms  
+    6. Hash Verification Time               : 0.0545 ms  
+
+╔══════════════════════════════════════════════════════════════╗
+║  TABLE 2 — Image Integrity and Security Evaluation           ║
+╚══════════════════════════════════════════════════════════════╝
+  Objective: Tamper detection + wrong-key rejection on 50 images
+
+  No | File                        | IntactDecrypt | TamperDetect | WrongKeyReject | Result
+  ------------------------------------------------------------------------------------------------
+    1 | brisc2025_test_00001_gl_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+    2 | brisc2025_test_00002_gl_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+    3 | brisc2025_test_00003_gl_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+    4 | brisc2025_test_00004_gl_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+    5 | brisc2025_test_00005_gl_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+    6 | brisc2025_test_00006_gl_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+    7 | brisc2025_test_00007_gl_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+    8 | brisc2025_test_00008_gl_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+    9 | brisc2025_test_00009_gl_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   10 | brisc2025_test_00010_gl_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   11 | brisc2025_test_00255_me_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   12 | brisc2025_test_00256_me_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   13 | brisc2025_test_00257_me_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   14 | brisc2025_test_00258_me_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   15 | brisc2025_test_00259_me_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   16 | brisc2025_test_00260_me_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   17 | brisc2025_test_00261_me_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   18 | brisc2025_test_00262_me_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   19 | brisc2025_test_00263_me_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   20 | brisc2025_test_00264_me_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   21 | brisc2025_test_00561_no_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   22 | brisc2025_test_00562_no_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   23 | brisc2025_test_00563_no_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   24 | brisc2025_test_00564_no_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   25 | brisc2025_test_00565_no_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   26 | brisc2025_test_00566_no_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   27 | brisc2025_test_00567_no_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   28 | brisc2025_test_00568_no_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   29 | brisc2025_test_00569_no_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   30 | brisc2025_test_00570_no_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   31 | brisc2025_test_00701_pi_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   32 | brisc2025_test_00702_pi_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   33 | brisc2025_test_00703_pi_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   34 | brisc2025_test_00704_pi_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   35 | brisc2025_test_00705_pi_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   36 | brisc2025_test_00706_pi_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   37 | brisc2025_test_00707_pi_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   38 | brisc2025_test_00708_pi_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   39 | brisc2025_test_00709_pi_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   40 | brisc2025_test_00710_pi_ax_ | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   41 | xray_001.png                | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   42 | xray_002.png                | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   43 | xray_003.png                | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   44 | xray_004.png                | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   45 | xray_005.png                | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   46 | xray_006.png                | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   47 | xray_007.png                | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   48 | xray_008.png                | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   49 | xray_009.png                | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+   50 | xray_010.png                | PASS ✓        | DETECTED ✓   | REJECTED ✓     | ALL PASS ✓
+  ------------------------------------------------------------------------------------------------
+  RESULTS:
+    1. Integrity Verification Accuracy      : 100.00%  (100/100)
+    2. Tampering Detection Rate (TPR)       : 100.00%  (50/50)
+    3. False Acceptance Rate (FAR)          : 0.00%  (0/50)
+    4. False Rejection Rate (FRR)           : 0.00%  (0/50)
+    5. Decryption Success Rate              : 100.00%  (50/50)
+    6. Unauthorized Decryption Rejection Rate: 100.00%  (50/50)
+
+╔══════════════════════════════════════════════════════════════╗
+║  TABLE 3 — Storage and IPFS Performance Evaluation           ║
+╚══════════════════════════════════════════════════════════════╝
+  Objective: Real Pinata upload/download for 10 encrypted images
+
+  UPLOADS:
+  No | File                        | OrigKB  | EncKB   | Overhead | CID                          | UploadTime
+  --------------------------------------------------------------------------------------------------------------
+    1 | brisc2025_test_00001_gl_ax_ |   25.22 |   25.25 |  0.1084% | QmcA1hCn3kNQWb1sCquywutt31VU | 2.492s
+    2 | brisc2025_test_00002_gl_ax_ |   20.49 |   20.52 |  0.1334% | Qmd3oJm4TAbfcoVU8YCbPpRD2zks | 0.690s
+    3 | brisc2025_test_00255_me_ax_ |   21.50 |   21.53 |  0.1272% | QmUYmUjLLTKqAvbtAhV1Y1P9XtbA | 0.694s
+    4 | brisc2025_test_00256_me_ax_ |   11.71 |   11.74 |  0.2334% | QmcdP8nYmc9xDXfmUDYsTSV8RRML | 0.703s
+    5 | brisc2025_test_00561_no_ax_ |    9.48 |    9.51 |  0.2884% | QmbwQ6ZKWhvZuPL4Szkt1J3BQw7Q | 0.685s
+    6 | brisc2025_test_00562_no_ax_ |    8.79 |    8.82 |  0.3110% | Qmeohrz8gR8au4v5oU7S7AP2FMXb | 0.804s
+    7 | brisc2025_test_00701_pi_ax_ |   30.46 |   30.49 |  0.0898% | QmP68sU72bfYt95JdWv9G2uggN52 | 0.689s
+    8 | brisc2025_test_00702_pi_ax_ |   27.84 |   27.87 |  0.0982% | QmdB8cwWsVWumf2Y8YDzjvMV66yP | 0.761s
+    9 | xray_001.png                |  436.51 |  436.54 |  0.0063% | QmdrbF7f1ZFKy9AD2b5ATJCfvb9n | 1.048s
+   10 | xray_002.png                |  402.05 |  402.08 |  0.0068% | QmXrgZNe4yZWHVJpZzvySksH38XQ | 1.264s
+
+  DOWNLOADS:
+  No | CID                          | SizeKB  | DownloadTime | Status
+  ---------------------------------------------------------------------------
+    1 | QmcA1hCn3kNQWb1sCquywutt31VU |   25.25 |       11.424s | SUCCESS ✓
+    2 | Qmd3oJm4TAbfcoVU8YCbPpRD2zks |   20.52 |        5.589s | SUCCESS ✓
+    3 | QmUYmUjLLTKqAvbtAhV1Y1P9XtbA |   21.53 |        6.080s | SUCCESS ✓
+    4 | QmcdP8nYmc9xDXfmUDYsTSV8RRML |   11.74 |        6.230s | SUCCESS ✓
+    5 | QmbwQ6ZKWhvZuPL4Szkt1J3BQw7Q |    9.51 |        6.148s | SUCCESS ✓
+    6 | Qmeohrz8gR8au4v5oU7S7AP2FMXb |    8.82 |        6.519s | SUCCESS ✓
+    7 | QmP68sU72bfYt95JdWv9G2uggN52 |   30.49 |        4.585s | SUCCESS ✓
+    8 | QmdB8cwWsVWumf2Y8YDzjvMV66yP |   27.87 |        7.188s | SUCCESS ✓
+    9 | QmdrbF7f1ZFKy9AD2b5ATJCfvb9n |  436.54 |        5.080s | SUCCESS ✓
+   10 | QmXrgZNe4yZWHVJpZzvySksH38XQ |  402.08 |        5.392s | SUCCESS ✓
+
+  RESULTS:
+    1. Original Image Size (avg)            : 0.0971 MB  (99.41 KB)
+    2. Encrypted Image Size (avg)           : 0.0971 MB  (99.43 KB)
+    3. Storage Overhead (avg)               : 0.1403%  
+    4. IPFS Upload Latency                  : 0.983 s  (min: 0.685s, max: 2.492s)
+    5. IPFS Download Latency                : 6.423 s  (min: 4.585s, max: 11.424s)
+    6. Storage Retrieval Success Rate       : 100.00%  (10/10)
+
+╔══════════════════════════════════════════════════════════════╗
+║  TABLE 4 — Blockchain Performance Evaluation                 ║
+╚══════════════════════════════════════════════════════════════╝
+  Objective: Real storeImage() transactions on Ganache
+
+  No | File                     | GasUsed | TxTime(ms) | Block | MetaRet(ms) | Status
+  -----------------------------------------------------------------------------------------------
+    1 | brisc2025_test_00001_gl_ |  331522 |      177.4 |    62 |        27.8 | SUCCESS ✓
+    2 | brisc2025_test_00002_gl_ |  331522 |      157.8 |    63 |        28.3 | SUCCESS ✓
+    3 | brisc2025_test_00255_me_ |  331522 |      157.1 |    64 |        28.5 | SUCCESS ✓
+    4 | brisc2025_test_00256_me_ |  331522 |      143.6 |    65 |        25.6 | SUCCESS ✓
+    5 | brisc2025_test_00561_no_ |  331522 |      160.4 |    66 |        27.0 | SUCCESS ✓
+    6 | brisc2025_test_00562_no_ |  331522 |      158.1 |    67 |        28.7 | SUCCESS ✓
+    7 | brisc2025_test_00701_pi_ |  331522 |      171.8 |    68 |        30.8 | SUCCESS ✓
+    8 | brisc2025_test_00702_pi_ |  331522 |      157.4 |    69 |        30.0 | SUCCESS ✓
+    9 | xray_001.png             |  286787 |      156.5 |    70 |        27.8 | SUCCESS ✓
+   10 | xray_002.png             |  286787 |      158.1 |    71 |        26.8 | SUCCESS ✓
+  -----------------------------------------------------------------------------------------------
+  RESULTS:
+    1. Gas Consumption (avg)                : 322575 gas units  (min: 286787, max: 331522)
+    2. Transaction Execution Time (avg)     : 159.8 ms  
+    3. Transaction Success Rate             : 100.00%  (10/10)
+    4. Metadata Registration Time (avg)     : 159.8 ms  
+    5. Metadata Retrieval Latency (avg)     : 28.1 ms  
+    6. Transaction Throughput               : 6.26 TPS  
+
+╔══════════════════════════════════════════════════════════════╗
+║  TABLE 5 — End-to-End System Performance Evaluation          ║
+╚══════════════════════════════════════════════════════════════╝
+  Objective: Full pipeline timing — preprocessing → encrypt → IPFS → blockchain
+
+  No | File                     | Prep(ms) | Crypto(ms)| Upload(s) | Retrieve(s)| RetDec(s) | E2E(s)
+  ---------------------------------------------------------------------------------------------------------
+    1 | brisc2025_test_00001_gl_ |   1.7316 |    0.1413 |     2.494 |     11.424 |    11.424 |  2.494
+    2 | brisc2025_test_00002_gl_ |   0.8886 |    0.0932 |     0.691 |      5.589 |     5.589 |  0.691
+    3 | brisc2025_test_00255_me_ |   0.3951 |    0.0999 |     0.694 |      6.080 |     6.080 |  0.694
+    4 | brisc2025_test_00256_me_ |   0.2144 |    0.0750 |     0.703 |      6.230 |     6.230 |  0.703
+    5 | brisc2025_test_00561_no_ |   0.1623 |    0.0587 |     0.685 |      6.148 |     6.148 |  0.685
+    6 | brisc2025_test_00562_no_ |   0.2298 |    0.0643 |     0.804 |      6.519 |     6.519 |  0.804
+    7 | brisc2025_test_00701_pi_ |   0.4679 |    0.0681 |     0.689 |      4.585 |     4.585 |  0.689
+    8 | brisc2025_test_00702_pi_ |   0.3754 |    0.1015 |     0.761 |      7.188 |     7.188 |  0.761
+    9 | xray_001.png             |   5.9977 |    0.9173 |     1.055 |      5.080 |     5.081 |  1.055
+   10 | xray_002.png             |   4.9229 |    0.8316 |     1.269 |      5.392 |     5.392 |  1.269
+  ---------------------------------------------------------------------------------------------------------
+  RESULTS:
+    1. Image Preprocessing Time (avg)       : 1.5386 ms  
+    2. Total Encryption & Hashing Time (avg): 0.2451 ms  
+    3. Total Upload Time (avg)              : 0.985 s  
+    4. Total Retrieval Time (avg)           : 6.423 s  
+    5. Retrieval & Decryption Latency (avg) : 6.423 s  
+    6. End-to-End Processing Time (avg)     : 0.985 s  
+
+╔══════════════════════════════════════════════════════════════╗
+║  TABLE 6 — Medical Image Quality Evaluation                  ║
+╚══════════════════════════════════════════════════════════════╝
+  Objective: Pixel-level comparison — original vs encrypt→decrypt restored
+
+  No | File                        | MSE      | MAE      | PSNR(dB)    | SSIM     | NCC
+  -------------------------------------------------------------------------------------------------
+    1 | brisc2025_test_00001_gl_ax_ | 0.000000 | 0.000000 | ∞ (lossless) | 1.000000 | 1.000000
+    2 | brisc2025_test_00002_gl_ax_ | 0.000000 | 0.000000 | ∞ (lossless) | 1.000000 | 1.000000
+    3 | brisc2025_test_00003_gl_ax_ | 0.000000 | 0.000000 | ∞ (lossless) | 1.000000 | 1.000000
+    4 | brisc2025_test_00004_gl_ax_ | 0.000000 | 0.000000 | ∞ (lossless) | 1.000000 | 1.000000
+    5 | brisc2025_test_00005_gl_ax_ | 0.000000 | 0.000000 | ∞ (lossless) | 1.000000 | 1.000000
+    6 | brisc2025_test_00006_gl_ax_ | 0.000000 | 0.000000 | ∞ (lossless) | 1.000000 | 1.000000
+    7 | brisc2025_test_00007_gl_ax_ | 0.000000 | 0.000000 | ∞ (lossless) | 1.000000 | 1.000000
+    8 | brisc2025_test_00008_gl_ax_ | 0.000000 | 0.000000 | ∞ (lossless) | 1.000000 | 1.000000
+    9 | brisc2025_test_00009_gl_ax_ | 0.000000 | 0.000000 | ∞ (lossless) | 1.000000 | 1.000000
+   10 | brisc2025_test_00010_gl_ax_ | 0.000000 | 0.000000 | ∞ (lossless) | 1.000000 | 1.000000
+   11 | brisc2025_test_00255_me_ax_ | 0.000000 | 0.000000 | ∞ (lossless) | 1.000000 | 1.000000
+   12 | brisc2025_test_00256_me_ax_ | 0.000000 | 0.000000 | ∞ (lossless) | 1.000000 | 1.000000
+   13 | brisc2025_test_00257_me_ax_ | 0.000000 | 0.000000 | ∞ (lossless) | 1.000000 | 1.000000
+   14 | brisc2025_test_00258_me_ax_ | 0.000000 | 0.000000 | ∞ (lossless) | 1.000000 | 1.000000
+   15 | brisc2025_test_00259_me_ax_ | 0.000000 | 0.000000 | ∞ (lossless) | 1.000000 | 1.000000
+   16 | brisc2025_test_00260_me_ax_ | 0.000000 | 0.000000 | ∞ (lossless) | 1.000000 | 1.000000
+   17 | brisc2025_test_00261_me_ax_ | 0.000000 | 0.000000 | ∞ (lossless) | 1.000000 | 1.000000
+   18 | brisc2025_test_00262_me_ax_ | 0.000000 | 0.000000 | ∞ (lossless) | 1.000000 | 1.000000
+   19 | brisc2025_test_00263_me_ax_ | 0.000000 | 0.000000 | ∞ (lossless) | 1.000000 | 1.000000
+   20 | brisc2025_test_00264_me_ax_ | 0.000000 | 0.000000 | ∞ (lossless) | 1.000000 | 1.000000
+  -------------------------------------------------------------------------------------------------
+  RESULTS:
+    1. Mean Squared Error (MSE)             : 0.00000000  
+    2. Mean Absolute Error (MAE)            : 0.00000000  
+    3. Peak Signal-to-Noise Ratio (PSNR)    : ∞ dB (perfect lossless)  
+    4. Structural Similarity Index (SSIM)   : 1.000000  
+    5. Normalized Cross-Correlation (NCC)   : 1.000000  
+    6. Edge Preservation Index              : 1.000000  (AES-GCM is lossless — zero pixel change)  
+
+
+██████████████████████████████████████████████████████████████████████████
+█                                                                        █
+█   MEDCHAIN — CONCISE EVALUATION SUMMARY (ALL 6 TABLES)                 █
+█   Generated: 2026-11-14T06:22:59.190Z                                  █
+█                                                                        █
+██████████████████████████████████████████████████████████████████████████
+
+  ┌══════════════════════════════════════════════════════════════════════┐
+  │  TABLE 1 — Cryptographic Performance Evaluation                      │
+  │  Objective: Evaluate AES-256-GCM and SHA-256 efficiency              │
+  └══════════════════════════════════════════════════════════════════════┘
+  No  │ Metric                                 │ Unit           │ Result
+  ──  ┼────────────────────────────────────────┼────────────────┼───────────────
+   1  │ Encryption Time                        │ ms             │ 0.1347 ms  (min: 0.0292, max: 0.5278)
+   2  │ Decryption Time                        │ ms             │ 0.1156 ms  (min: 0.0183, max: 0.6291)
+   3  │ Encryption Throughput                  │ MB/s           │ 492.50 MB/s
+   4  │ Decryption Throughput                  │ MB/s           │ 625.09 MB/s
+   5  │ SHA-256 Generation Time                │ ms             │ 0.0665 ms
+   6  │ Hash Verification Time                 │ ms             │ 0.0545 ms
+  ──────────────────────────────────────────────────────────────────────
+  Samples: 50 real images (glioma/meningioma/no_tumor/pituitary/xray_real)
+
+  ┌══════════════════════════════════════════════════════════════════════┐
+  │  TABLE 2 — Image Integrity and Security Evaluation                   │
+  │  Objective: Tamper detection + unauthorized decryption rejection     │
+  └══════════════════════════════════════════════════════════════════════┘
+  No  │ Metric                                 │ Unit           │ Result
+  ──  ┼────────────────────────────────────────┼────────────────┼───────────────
+   1  │ Integrity Verification Accuracy        │ %              │ 100.00%  (100/100 correct)
+   2  │ Tampering Detection Rate (TPR)         │ %              │ 100.00%  (50/50 tampered detected)
+   3  │ False Acceptance Rate (FAR)            │ %              │ 0.00%  (0/50)
+   4  │ False Rejection Rate (FRR)             │ %              │ 0.00%  (0/50)
+   5  │ Decryption Success Rate                │ %              │ 100.00%  (50/50)
+   6  │ Unauthorized Decryption Rejection      │ %              │ 100.00%  (50/50)
+  ──────────────────────────────────────────────────────────────────────
+  Samples: 50 images × 3 tests each (intact + tampered + wrong-key)
+
+  ┌══════════════════════════════════════════════════════════════════════┐
+  │  TABLE 3 — Storage and IPFS Performance Evaluation                   │
+  │  Objective: Real Pinata upload/download latency and overhead        │
+  └══════════════════════════════════════════════════════════════════════┘
+  No  │ Metric                                 │ Unit           │ Result
+  ──  ┼────────────────────────────────────────┼────────────────┼───────────────
+   1  │ Original Image Size                    │ MB             │ 0.0971 MB  (avg 99.41 KB)
+   2  │ Encrypted Image Size                   │ MB             │ 0.0971 MB  (avg 99.43 KB)
+   3  │ Storage Overhead                       │ %              │ 0.1403%  (+28 bytes per file: IV+GCM tag)
+   4  │ IPFS Upload Latency                    │ s              │ 0.983 s  (min: 0.685s, max: 2.492s)
+   5  │ IPFS Download Latency                  │ s              │ 6.423 s  (min: 4.585s, max: 11.424s)
+   6  │ Storage Retrieval Success Rate         │ %              │ 100.00%  (10/10 CIDs retrieved)
+  ──────────────────────────────────────────────────────────────────────
+  Provider: Pinata (FRA1 + NYC1)  |  10 real uploads  |  10 successful downloads
+
+  ┌══════════════════════════════════════════════════════════════════════┐
+  │  TABLE 4 — Blockchain Performance Evaluation                         │
+  │  Objective: Real storeImage() / getRecord() on Ganache               │
+  └══════════════════════════════════════════════════════════════════════┘
+  No  │ Metric                                 │ Unit           │ Result
+  ──  ┼────────────────────────────────────────┼────────────────┼───────────────
+   1  │ Gas Consumption                        │ Gas units      │ 322575  (min: 286787, max: 331522)
+   2  │ Transaction Execution Time             │ ms             │ 159.8 ms
+   3  │ Transaction Success Rate               │ %              │ 100.00%  (10/10)
+   4  │ Metadata Registration Time             │ ms             │ 159.8 ms
+   5  │ Metadata Retrieval Latency             │ ms             │ 28.1 ms
+   6  │ Transaction Throughput                 │ TPS            │ 6.26 TPS
+  ──────────────────────────────────────────────────────────────────────
+  Network: Ganache Local (chainId 1337)  |  Contract: 0x482091b73484C94F7cC2Db30fA8Fa8c30801FE41
+
+  ┌══════════════════════════════════════════════════════════════════════┐
+  │  TABLE 5 — End-to-End System Performance Evaluation                  │
+  │  Objective: Full pipeline — preprocess → encrypt → IPFS → blockchain│
+  └══════════════════════════════════════════════════════════════════════┘
+  No  │ Metric                                 │ Unit           │ Result
+  ──  ┼────────────────────────────────────────┼────────────────┼───────────────
+   1  │ Image Preprocessing Time               │ ms             │ 1.5386 ms
+   2  │ Total Encryption & Hashing Time        │ ms             │ 0.2451 ms
+   3  │ Total Upload Time                      │ s              │ 0.985 s  (preprocess + encrypt + IPFS pin)
+   4  │ Total Retrieval Time                   │ s              │ 6.423 s  (IPFS download)
+   5  │ Retrieval & Decryption Latency         │ s              │ 6.423 s  (download + AES-256-GCM decrypt)
+   6  │ End-to-End Processing Time             │ s              │ 0.985 s  (input image → secured IPFS+blockchain)
+  ──────────────────────────────────────────────────────────────────────
+  Pipeline: Preprocessing → AES-256-GCM → SHA-256 → Pinata IPFS → Ganache
+
+  ┌══════════════════════════════════════════════════════════════════════┐
+  │  TABLE 6 — Medical Image Quality Evaluation                          │
+  │  Objective: Pixel-level quality after encrypt → decrypt cycle       │
+  └══════════════════════════════════════════════════════════════════════┘
+  No  │ Metric                                 │ Unit           │ Result
+  ──  ┼────────────────────────────────────────┼────────────────┼───────────────
+   1  │ Mean Squared Error (MSE)               │ —              │ 0.00000000
+   2  │ Mean Absolute Error (MAE)              │ —              │ 0.00000000
+   3  │ Peak Signal-to-Noise Ratio (PSNR)      │ dB             │ ∞ dB  (perfect lossless reconstruction)
+   4  │ Structural Similarity Index (SSIM)     │ 0–1            │ 1.000000
+   5  │ Normalized Cross-Correlation (NCC)     │ 0–1            │ 1.000000
+   6  │ Edge Preservation Index                │ —              │ 1.000000  (AES-GCM lossless — zero pixel degradation)
+  ──────────────────────────────────────────────────────────────────────
+  Samples: 20 images  |  Method: byte-level orig vs decrypt comparison
+
+██████████████████████████████████████████████████████████████████████████
+█                                                                        █
+█   ✅  ALL 6 TABLES COMPLETE — 100% REAL MEASURED VALUES                 █
+█   📋  50 images benchmarked  |  10 real IPFS uploads  |  10 Ganache txs█
+█   📄  Full report saved to: evaluation_results.txt                     █
+█                                                                        █
+██████████████████████████████████████████████████████████████████████████

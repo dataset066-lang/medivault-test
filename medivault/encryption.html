@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Encryption & Security — MediVault</title>
+  <link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<div class="app-layout">
+  <div id="sidebar-container"></div>
+  <div class="main-content">
+
+    <div class="topbar">
+      <div class="breadcrumb">
+        <span>MediVault</span><span class="bc-sep">›</span><span class="bc-active">Encryption &amp; Security</span>
+      </div>
+      <div class="topbar-right">
+        <div id="wallet-status-bar"></div>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <div class="page-header">
+        <h1 class="page-title">🔐 Step 3 — AES-256 Encryption &amp; SHA-256 Hash</h1>
+        <p class="page-subtitle">Encrypt the processed medical image using AES-256-GCM and compute a SHA-256 integrity hash before IPFS upload.</p>
+      </div>
+
+      <!-- Pipeline indicator -->
+      <div class="pipeline-bar">
+        <div class="pipe-step done"><span class="p-icon">🏥</span><span class="p-label">1. Acquisition</span></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step done"><span class="p-icon">⚙️</span><span class="p-label">2. Preprocessing</span></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step active"><span class="p-icon">🔐</span><span class="p-label">3. Encryption</span></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step"><span class="p-icon">📦</span><span class="p-label">4. IPFS Storage</span></div>
+      </div>
+
+      <!-- No image warning -->
+      <div id="no-image-warn" class="hidden">
+        <div class="card" style="text-align:center;padding:40px;">
+          <div style="font-size:48px;margin-bottom:12px;">⚠️</div>
+          <h3 style="margin-bottom:8px;color:var(--warning);">No Preprocessed Image Found</h3>
+          <p class="text-muted mb-16">Please complete image acquisition and preprocessing first.</p>
+          <a href="preprocessing.html" class="btn btn-primary">← Go to Preprocessing</a>
+        </div>
+      </div>
+
+      <div id="main-wrap">
+        <div class="grid-2">
+          <!-- Left: Config -->
+          <div style="display:flex;flex-direction:column;gap:20px;">
+            <div class="card">
+              <div class="card-title" style="margin-bottom:16px;">🔒 Encryption Configuration</div>
+
+              <div class="toggle-row">
+                <div class="toggle-row-label">
+                  <span class="label-main">Enable AES-256-GCM Encryption</span>
+                  <span class="label-desc">Industry-standard authenticated encryption</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="enc-toggle" checked onchange="toggleEncOpts(this)">
+                  <span class="toggle-track"></span>
+                </label>
+              </div>
+
+              <div id="enc-options">
+                <div class="form-group" style="margin-top:16px;">
+                  <label class="form-label">Key Derivation Method</label>
+                  <select id="kdf-select" onchange="toggleKDF(this)">
+                    <option value="random">Random Key (256-bit, secure)</option>
+                    <option value="pbkdf2">PBKDF2 from Password</option>
+                  </select>
+                </div>
+
+                <div id="pwd-wrap" class="hidden form-group">
+                  <label class="form-label">Passphrase <span class="required">*</span></label>
+                  <input type="password" id="enc-password" placeholder="Enter a strong passphrase…">
+                  <span class="text-sm text-muted mt-4">Will use PBKDF2 with SHA-256, 100,000 iterations.</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title" style="margin-bottom:14px;">▶️ Run Encryption</div>
+              <p class="text-muted" style="margin-bottom:16px;">Click to encrypt and hash the preprocessed image. The encrypted binary will be ready for IPFS upload.</p>
+              <button class="btn btn-primary btn-full" id="encrypt-btn" onclick="runEncryption()">
+                🔐 Encrypt &amp; Compute Hash
+              </button>
+
+              <div id="enc-progress" class="hidden" style="margin-top:14px;">
+                <div class="progress-wrap"><div class="progress-bar" id="enc-bar"></div></div>
+                <div class="step-list">
+                  <div class="step-item">
+                    <div class="step-num pending" id="es-load-s">1</div>
+                    <div class="step-body">
+                      <div class="step-title">Loading Preprocessed Image</div>
+                      <div class="step-desc" id="es-load-d">Reading image data…</div>
+                    </div>
+                  </div>
+                  <div class="step-item">
+                    <div class="step-num pending" id="es-key-s">2</div>
+                    <div class="step-body">
+                      <div class="step-title">Generating / Deriving Key</div>
+                      <div class="step-desc" id="es-key-d">Web Crypto API key generation…</div>
+                    </div>
+                  </div>
+                  <div class="step-item">
+                    <div class="step-num pending" id="es-enc-s">3</div>
+                    <div class="step-body">
+                      <div class="step-title">AES-256-GCM Encryption</div>
+                      <div class="step-desc" id="es-enc-d">Encrypting with random IV…</div>
+                    </div>
+                  </div>
+                  <div class="step-item">
+                    <div class="step-num pending" id="es-hash-s">4</div>
+                    <div class="step-body">
+                      <div class="step-title">SHA-256 Hash</div>
+                      <div class="step-desc" id="es-hash-d">Computing integrity hash…</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Results -->
+          <div style="display:flex;flex-direction:column;gap:20px;">
+            <div class="card">
+              <div class="card-title" style="margin-bottom:14px;">🗂️ Image to Encrypt</div>
+              <div id="enc-preview" style="display:none;">
+                <div class="img-preview-wrap">
+                  <img id="enc-src-img" src="" alt="Preprocessed Image">
+                  <span class="img-preview-badge" style="background:rgba(37,99,235,0.8);color:#fff;">PREPROCESSED</span>
+                </div>
+                <div class="info-grid" style="margin-top:12px;grid-template-columns:1fr 1fr;">
+                  <div class="info-item"><div class="i-label">Modality</div><div class="i-value success" id="enc-modality">—</div></div>
+                  <div class="info-item"><div class="i-label">Source</div><div class="i-value" id="enc-source">—</div></div>
+                </div>
+              </div>
+              <div id="enc-no-img" style="text-align:center;padding:32px;color:var(--text-muted);">
+                <div style="font-size:36px;margin-bottom:8px;">🔐</div>
+                <p class="text-sm">No preprocessed image available</p>
+              </div>
+            </div>
+
+            <div class="card" id="enc-result-card" style="display:none;">
+              <div class="card-title" style="margin-bottom:14px;color:var(--success);">✅ Encryption Complete</div>
+
+              <div class="form-group">
+                <label class="form-label">AES-256 Key (save this!)</label>
+                <div class="mono-box success">
+                  <span id="res-key">—</span>
+                  <button class="copy-btn" onclick="copyToClipboard(document.getElementById('res-key').textContent)">Copy</button>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Initialization Vector (IV)</label>
+                <div class="mono-box warning">
+                  <span id="res-iv">—</span>
+                  <button class="copy-btn" onclick="copyToClipboard(document.getElementById('res-iv').textContent)">Copy</button>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">SHA-256 Integrity Hash</label>
+                <div class="mono-box">
+                  <span id="res-hash">—</span>
+                  <button class="copy-btn" onclick="copyToClipboard(document.getElementById('res-hash').textContent)">Copy</button>
+                </div>
+              </div>
+
+              <div class="info-grid" style="margin-top:4px;grid-template-columns:1fr 1fr;">
+                <div class="info-item"><div class="i-label">Encrypted Size</div><div class="i-value primary" id="res-enc-size">—</div></div>
+                <div class="info-item"><div class="i-label">Algorithm</div><div class="i-value success">AES-256-GCM</div></div>
+              </div>
+
+              <div class="card" style="background:#FFF7ED;border-color:#FDE68A;margin-top:16px;padding:14px;">
+                <p style="font-size:12.5px;color:#92400E;">
+                  ⚠️ <strong>Important:</strong> To let another person decrypt this upload, securely give them its IPFS CID, the full AES key, and the matching IV. The key and IV cannot be recovered if lost. Never publish them or put them in public IPFS metadata.
+                </p>
+              </div>
+
+              <div style="margin-top:16px;">
+                <a href="ipfs-storage.html" class="btn btn-primary btn-full">Continue to IPFS Storage →</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="shared.js"></script>
+<script>
+  initSidebar('encryption');
+  MediVault.load();
+
+  const procSrc = sessionStorage.getItem('mv_preprocessedDataUrl') || MediVault.preprocessedDataUrl;
+
+  if (!procSrc) {
+    document.getElementById('no-image-warn').classList.remove('hidden');
+    document.getElementById('main-wrap').style.display = 'none';
+  } else {
+    document.getElementById('enc-src-img').src = procSrc;
+    document.getElementById('enc-preview').style.display = 'block';
+    document.getElementById('enc-no-img').style.display  = 'none';
+    document.getElementById('enc-modality').textContent  = MediVault.currentImageType || '—';
+    document.getElementById('enc-source').textContent    = MediVault.metadata?.filename || 'Session image';
+  }
+
+  // If we already encrypted this session, show results
+  if (MediVault.encryptionKey) {
+    showExistingResults();
+  }
+
+  function showExistingResults() {
+    document.getElementById('res-key').textContent  = MediVault.encryptionKey || '—';
+    document.getElementById('res-iv').textContent   = MediVault.encryptionIV  || '—';
+    document.getElementById('res-hash').textContent = MediVault.sha256Hash    || '—';
+    if (MediVault.encryptedData)
+      document.getElementById('res-enc-size').textContent = formatBytes(MediVault.encryptedData.length);
+    document.getElementById('enc-result-card').style.display = 'block';
+  }
+
+  function toggleEncOpts(cb) {
+    document.getElementById('enc-options').style.opacity       = cb.checked ? '1' : '0.5';
+    document.getElementById('enc-options').style.pointerEvents = cb.checked ? 'auto' : 'none';
+  }
+
+  function toggleKDF(sel) {
+    document.getElementById('pwd-wrap').classList.toggle('hidden', sel.value !== 'pbkdf2');
+  }
+
+  async function runEncryption() {
+    const btn = document.getElementById('encrypt-btn');
+    btn.disabled = true;
+    document.getElementById('enc-progress').classList.remove('hidden');
+    document.getElementById('enc-result-card').style.display = 'none';
+    setElProgress('enc-bar', 0);
+
+    try {
+      setStepStatus('es-load-s', 'running');
+      const src = sessionStorage.getItem('mv_preprocessedDataUrl') || MediVault.preprocessedDataUrl;
+      if (!src) throw new Error('No preprocessed image found.');
+      await delay(200);
+      setStepStatus('es-load-s', 'done');
+      setElProgress('enc-bar', 20);
+
+      setStepStatus('es-key-s', 'running');
+      const kdfMode = document.getElementById('kdf-select').value;
+      setStepDesc('es-key-d', kdfMode === 'pbkdf2' ? 'Deriving key via PBKDF2…' : 'Generating 256-bit random key…');
+      await delay(200);
+
+      const encEnabled = document.getElementById('enc-toggle').checked;
+      const result     = await encryptData(src, {
+        enabled:  encEnabled,
+        kdfMode:  kdfMode,
+        password: document.getElementById('enc-password').value || '',
+      });
+
+      setStepStatus('es-key-s', 'done');
+      setElProgress('enc-bar', 55);
+
+      setStepStatus('es-enc-s', 'running');
+      setStepDesc('es-enc-d', encEnabled ? 'Encrypting with AES-256-GCM…' : 'Encryption disabled — passthrough…');
+      await delay(100);
+      setStepStatus('es-enc-s', 'done');
+      setElProgress('enc-bar', 75);
+
+      setStepStatus('es-hash-s', 'running');
+      setStepDesc('es-hash-d', 'Computing SHA-256 hash of encrypted data…');
+      const hash = await sha256(result.encrypted);
+      await delay(100);
+      setStepStatus('es-hash-s', 'done');
+      setElProgress('enc-bar', 100);
+
+      // Save to state
+      MediVault.encryptionKey  = result.key;
+      MediVault.encryptionIV   = result.iv;
+      MediVault.sha256Hash     = hash;
+      MediVault.encryptedData  = result.encrypted;
+      MediVault.save();
+      MediVault.saveSession();
+
+      // Show results
+      document.getElementById('res-key').textContent  = result.key  || 'None (encryption disabled)';
+      document.getElementById('res-iv').textContent   = result.iv   || 'None';
+      document.getElementById('res-hash').textContent = hash;
+      document.getElementById('res-enc-size').textContent = formatBytes(result.encrypted.length);
+      document.getElementById('enc-result-card').style.display = 'block';
+
+      addAuditLog('ENCRYPTION', 'AES-256-GCM · SHA256:' + hash.slice(0,16) + '…', 'success');
+      toast('Encryption complete!', 'success');
+      document.getElementById('enc-result-card').scrollIntoView({ behavior: 'smooth' });
+
+    } catch(err) {
+      toast('Encryption error: ' + err.message, 'error');
+      addAuditLog('ENCRYPTION', err.message, 'error');
+      console.error(err);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+</script>
+</body>
+</html>

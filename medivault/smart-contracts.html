@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Contracts — MediVault</title>
+  <link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<div class="app-layout">
+  <div id="sidebar-container"></div>
+  <div class="main-content">
+
+    <div class="topbar">
+      <div class="breadcrumb">
+        <span>MediVault</span><span class="bc-sep">›</span><span class="bc-active">Smart Contracts</span>
+      </div>
+      <div class="topbar-right">
+        <div id="wallet-status-bar"></div>
+        <div class="wallet-toggle-wrap">
+          <span>Wallet</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="wallet-toggle" onchange="onWalletToggle(this)">
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <div class="page-header">
+        <h1 class="page-title">📋 Smart Contracts &amp; Access Control</h1>
+        <p class="page-subtitle">Manage role-based access control, view contract functions, and interact with the MedImageRegistry smart contract.</p>
+      </div>
+
+      <!-- Contract Info -->
+      <div class="card mb-24">
+        <div class="card-header">
+          <div class="card-title">⛓️ MedImageRegistry Contract</div>
+          <span class="badge badge-muted" id="deploy-badge">Loading…</span>
+        </div>
+        <div class="info-grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));">
+          <div class="info-item">
+            <div class="i-label">Contract Address</div>
+            <div class="i-value primary" id="sc-address" style="font-size:11px;">Loading…</div>
+          </div>
+          <div class="info-item">
+            <div class="i-label">Network / Chain ID</div>
+            <div class="i-value" id="sc-network">—</div>
+          </div>
+          <div class="info-item">
+            <div class="i-label">Deployed At</div>
+            <div class="i-value" id="sc-deployed-at" style="font-size:11px;">—</div>
+          </div>
+          <div class="info-item">
+            <div class="i-label">TX Hash</div>
+            <div class="i-value primary" id="sc-tx-hash" style="font-size:10px;">—</div>
+          </div>
+        </div>
+        <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="viewMyRecords()">📋 View My Records</button>
+          <button class="btn btn-secondary" onclick="getTotalRecords()">🔢 Total Records</button>
+          <button class="btn btn-secondary" onclick="refreshContractInfo()">🔄 Refresh</button>
+        </div>
+        <div id="sc-call-result" style="display:none;margin-top:14px;" class="mono-box">—</div>
+      </div>
+
+      <!-- Function Reference -->
+      <div class="card mb-24">
+        <div class="card-header">
+          <div class="card-title">📖 Contract Function Reference</div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Function</th><th>Type</th><th>Parameters</th><th>Returns</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="td-mono">storeImage()</td>
+                <td><span class="badge badge-info">Write</span></td>
+                <td class="text-sm text-muted">cid, hash, imageType, filename, encrypted</td>
+                <td class="text-sm">recordId (uint256)</td>
+                <td class="text-sm text-muted">Store an encrypted IPFS image record on-chain</td>
+              </tr>
+              <tr>
+                <td class="td-mono">getRecord()</td>
+                <td><span class="badge badge-muted">Read</span></td>
+                <td class="text-sm text-muted">recordId (uint256)</td>
+                <td class="text-sm">ImageRecord struct</td>
+                <td class="text-sm text-muted">Retrieve a specific image record by ID</td>
+              </tr>
+              <tr>
+                <td class="td-mono">getMyRecords()</td>
+                <td><span class="badge badge-muted">Read</span></td>
+                <td class="text-sm text-muted">—</td>
+                <td class="text-sm">uint256[] recordIds</td>
+                <td class="text-sm text-muted">Get all record IDs owned by caller</td>
+              </tr>
+              <tr>
+                <td class="td-mono">totalRecords()</td>
+                <td><span class="badge badge-muted">Read</span></td>
+                <td class="text-sm text-muted">—</td>
+                <td class="text-sm">uint256 count</td>
+                <td class="text-sm text-muted">Total number of records stored</td>
+              </tr>
+              <tr>
+                <td class="td-mono">grantAccess()</td>
+                <td><span class="badge badge-warning">Admin</span></td>
+                <td class="text-sm text-muted">address, role</td>
+                <td class="text-sm">—</td>
+                <td class="text-sm text-muted">Grant role-based access to an address</td>
+              </tr>
+              <tr>
+                <td class="td-mono">revokeAccess()</td>
+                <td><span class="badge badge-danger">Admin</span></td>
+                <td class="text-sm text-muted">address, role</td>
+                <td class="text-sm">—</td>
+                <td class="text-sm text-muted">Revoke access from an address</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RBAC -->
+      <div class="card-title" style="margin-bottom:16px;font-size:16px;">🔑 Role-Based Access Control (RBAC)</div>
+      <div class="grid-3" style="margin-bottom:24px;">
+
+        <div class="role-card">
+          <div class="role-card-header">
+            <span class="role-icon">👨‍⚕️</span>
+            <div>
+              <div class="role-name">Radiologist</div>
+              <div class="role-desc">Full read/write to all imaging records</div>
+            </div>
+          </div>
+          <div class="role-users">Assigned addresses: <span id="role-rad-count">0</span></div>
+          <div class="role-actions">
+            <button class="btn btn-success btn-sm" onclick="grantRole('RADIOLOGIST')">+ Grant</button>
+            <button class="btn btn-danger btn-sm"  onclick="revokeRole('RADIOLOGIST')">− Revoke</button>
+          </div>
+        </div>
+
+        <div class="role-card">
+          <div class="role-card-header">
+            <span class="role-icon">🩺</span>
+            <div>
+              <div class="role-name">Physician</div>
+              <div class="role-desc">Read access to patient-assigned records</div>
+            </div>
+          </div>
+          <div class="role-users">Assigned addresses: <span id="role-phy-count">0</span></div>
+          <div class="role-actions">
+            <button class="btn btn-success btn-sm" onclick="grantRole('PHYSICIAN')">+ Grant</button>
+            <button class="btn btn-danger btn-sm"  onclick="revokeRole('PHYSICIAN')">− Revoke</button>
+          </div>
+        </div>
+
+        <div class="role-card">
+          <div class="role-card-header">
+            <span class="role-icon">🔬</span>
+            <div>
+              <div class="role-name">Laboratory</div>
+              <div class="role-desc">Write access for lab test imaging</div>
+            </div>
+          </div>
+          <div class="role-users">Assigned addresses: <span id="role-lab-count">0</span></div>
+          <div class="role-actions">
+            <button class="btn btn-success btn-sm" onclick="grantRole('LABORATORY')">+ Grant</button>
+            <button class="btn btn-danger btn-sm"  onclick="revokeRole('LABORATORY')">− Revoke</button>
+          </div>
+        </div>
+
+        <div class="role-card">
+          <div class="role-card-header">
+            <span class="role-icon">🏢</span>
+            <div>
+              <div class="role-name">Insurance</div>
+              <div class="role-desc">Read-only access to authorized records</div>
+            </div>
+          </div>
+          <div class="role-users">Assigned addresses: <span id="role-ins-count">0</span></div>
+          <div class="role-actions">
+            <button class="btn btn-success btn-sm" onclick="grantRole('INSURANCE')">+ Grant</button>
+            <button class="btn btn-danger btn-sm"  onclick="revokeRole('INSURANCE')">− Revoke</button>
+          </div>
+        </div>
+
+        <div class="role-card">
+          <div class="role-card-header">
+            <span class="role-icon">🤒</span>
+            <div>
+              <div class="role-name">Patient</div>
+              <div class="role-desc">Own-record read access only</div>
+            </div>
+          </div>
+          <div class="role-users">Assigned addresses: <span id="role-pat-count">0</span></div>
+          <div class="role-actions">
+            <button class="btn btn-success btn-sm" onclick="grantRole('PATIENT')">+ Grant</button>
+            <button class="btn btn-danger btn-sm"  onclick="revokeRole('PATIENT')">− Revoke</button>
+          </div>
+        </div>
+
+        <div class="role-card">
+          <div class="role-card-header">
+            <span class="role-icon">🛡️</span>
+            <div>
+              <div class="role-name">Admin</div>
+              <div class="role-desc">Full contract ownership and control</div>
+            </div>
+          </div>
+          <div class="role-users">Assigned addresses: <span id="role-adm-count">1</span></div>
+          <div class="role-actions">
+            <button class="btn btn-warning btn-sm" onclick="grantRole('ADMIN')">+ Grant</button>
+            <button class="btn btn-danger btn-sm"  onclick="revokeRole('ADMIN')">− Revoke</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Access Request Log -->
+      <div class="card mb-24">
+        <div class="card-header">
+          <div class="card-title">📋 Access Control Log</div>
+          <span class="badge badge-muted" id="rbac-count">0 events</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Time</th><th>Action</th><th>Details</th><th>Status</th></tr>
+            </thead>
+            <tbody id="rbac-log-body">
+              <tr class="empty-row"><td colspan="4">No RBAC events yet</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Policy Note -->
+      <div class="card" style="background:#EFF6FF;border-color:#BFDBFE;">
+        <div class="card-title" style="margin-bottom:10px;color:var(--primary);">🔒 Access Policy Enforcement</div>
+        <ul style="font-size:13px;color:#1E40AF;padding-left:18px;line-height:2.2;">
+          <li>All access control changes are recorded on-chain and in the audit log.</li>
+          <li>Role assignments require the Admin wallet to be connected via MetaMask.</li>
+          <li>Patient records are encrypted; only holders of the AES key can decrypt.</li>
+          <li>IPFS CIDs are stored on-chain but content requires the decryption key.</li>
+          <li>SHA-256 hash ensures content integrity even if the IPFS file is replaced.</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<script src="shared.js"></script>
+<script>
+  initSidebar('smart-contracts');
+  MediVault.load();
+
+  // Load role counts from localStorage
+  const roleCounts = JSON.parse(localStorage.getItem('mv_roles') || '{"RADIOLOGIST":0,"PHYSICIAN":0,"LABORATORY":0,"INSURANCE":0,"PATIENT":0,"ADMIN":1}');
+  function saveRoleCounts() { localStorage.setItem('mv_roles', JSON.stringify(roleCounts)); }
+  function renderRoleCounts() {
+    const map = { RADIOLOGIST:'rad', PHYSICIAN:'phy', LABORATORY:'lab', INSURANCE:'ins', PATIENT:'pat', ADMIN:'adm' };
+    Object.entries(map).forEach(([role, id]) => {
+      const el = document.getElementById('role-' + id + '-count');
+      if (el) el.textContent = roleCounts[role] || 0;
+    });
+  }
+  renderRoleCounts();
+
+  // Contract info
+  loadContractConfig().then(cfg => {
+    if (cfg) {
+      document.getElementById('sc-address').textContent      = cfg.contractAddress;
+      document.getElementById('sc-network').textContent      = 'Ganache Local (Chain ' + cfg.chainId + ')';
+      document.getElementById('sc-deployed-at').textContent  = cfg.deployedAt ? new Date(cfg.deployedAt).toLocaleString() : '—';
+      document.getElementById('sc-tx-hash').textContent      = cfg.txHash || '—';
+      document.getElementById('deploy-badge').className      = 'badge badge-success';
+      document.getElementById('deploy-badge').textContent    = 'Deployed';
+    } else {
+      document.getElementById('sc-address').textContent   = 'Not deployed — run: node deploy.js';
+      document.getElementById('deploy-badge').className   = 'badge badge-danger';
+      document.getElementById('deploy-badge').textContent = 'Not Deployed';
+    }
+  });
+
+  function renderRBACLog() {
+    const logs = getAuditLogs().filter(l => l.action.startsWith('RBAC_'));
+    const badge = document.getElementById('rbac-count');
+    if (badge) badge.textContent = logs.length + ' events';
+    const tbody = document.getElementById('rbac-log-body');
+    if (!logs.length) return;
+    tbody.innerHTML = logs.map(log => `
+      <tr>
+        <td class="td-muted">${new Date(log.ts).toLocaleString()}</td>
+        <td>${log.action}</td>
+        <td class="text-sm">${log.details}</td>
+        <td>${log.status === 'success'
+          ? '<span class="badge badge-success">✓</span>'
+          : '<span class="badge badge-danger">✗</span>'}</td>
+      </tr>
+    `).join('');
+  }
+  renderRBACLog();
+
+  function grantRole(role) {
+    const address = prompt('Enter Ethereum address to grant ' + role + ' role:');
+    if (!address) return;
+    if (!/^0x[0-9a-fA-F]{40}$/.test(address)) {
+      toast('Invalid Ethereum address', 'error');
+      return;
+    }
+    roleCounts[role] = (roleCounts[role] || 0) + 1;
+    saveRoleCounts();
+    renderRoleCounts();
+    addAuditLog('RBAC_GRANT', role + ' → ' + address, 'success');
+    renderRBACLog();
+    toast('✅ Granted ' + role + ' role to ' + address.slice(0,10) + '…', 'success');
+  }
+
+  function revokeRole(role) {
+    const address = prompt('Enter Ethereum address to revoke ' + role + ' role from:');
+    if (!address) return;
+    if (!/^0x[0-9a-fA-F]{40}$/.test(address)) {
+      toast('Invalid Ethereum address', 'error');
+      return;
+    }
+    if (roleCounts[role] > 0) roleCounts[role]--;
+    saveRoleCounts();
+    renderRoleCounts();
+    addAuditLog('RBAC_REVOKE', role + ' ← ' + address, 'success');
+    renderRBACLog();
+    toast('⚠️ Revoked ' + role + ' role from ' + address.slice(0,10) + '…', 'warning');
+  }
+
+  async function viewMyRecords() {
+    const ch = window._mvChain;
+    const resultEl = document.getElementById('sc-call-result');
+    resultEl.style.display = 'block';
+
+    if (!ch.contract) {
+      const cfg = await loadContractConfig();
+      if (!cfg) { resultEl.textContent = 'Contract not deployed.'; return; }
+      if (!ch.signer) {
+        resultEl.textContent = 'Connect MetaMask wallet first.';
+        return;
+      }
+      ch.contract = new ethers.Contract(cfg.contractAddress, cfg.abi, ch.signer);
+    }
+
+    try {
+      resultEl.textContent = 'Calling getMyRecords()…';
+      const records = await ch.contract.getMyRecords();
+      resultEl.textContent = 'My Records: [' + records.map(r => r.toString()).join(', ') + '] (' + records.length + ' records)';
+      toast('Found ' + records.length + ' record(s)', 'success');
+    } catch(err) {
+      resultEl.textContent = 'Error: ' + err.message;
+      toast('Error: ' + err.message, 'error');
+    }
+  }
+
+  async function getTotalRecords() {
+    const ch = window._mvChain;
+    const resultEl = document.getElementById('sc-call-result');
+    resultEl.style.display = 'block';
+
+    const cfg = await loadContractConfig();
+    if (!cfg) { resultEl.textContent = 'Contract not deployed.'; return; }
+
+    try {
+      const provider = ch.provider || new ethers.JsonRpcProvider(cfg.rpcUrl);
+      const contract = new ethers.Contract(cfg.contractAddress, cfg.abi, provider);
+      const total    = await contract.totalRecords();
+      resultEl.textContent = 'Total Records on Blockchain: ' + total.toString();
+      toast('Total records: ' + total.toString(), 'success');
+    } catch(err) {
+      resultEl.textContent = 'Error: ' + err.message;
+      toast('Error: ' + err.message, 'error');
+    }
+  }
+
+  async function refreshContractInfo() {
+    const cfg = await loadContractConfig();
+    if (!cfg) { toast('Contract not deployed.', 'error'); return; }
+    document.getElementById('sc-address').textContent = cfg.contractAddress;
+    toast('Contract info refreshed.', 'success');
+  }
+</script>
+</body>
+</html>
